@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — RewardSync</title>
+  <meta name="description" content="Your unified reward wallet dashboard. View all rewards, manage connections, and maximize your savings."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <!-- Tesseract.js -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/dashboard.css"/>
+</head>
+<body class="app-body">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <a href="index.html" class="nav-logo">
+        <div class="logo-icon">
+          <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="14" fill="url(#sbLogoGrad)"/>
+            <path d="M8 14L12 18L20 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs><linearGradient id="sbLogoGrad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#EC4899"/></linearGradient></defs>
+          </svg>
+        </div>
+        <span class="logo-text">RewardSync</span>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#overview" class="nav-item active" data-page="overview">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Overview
+      </a>
+      <a href="#wallet" class="nav-item" data-page="wallet">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+        My Wallet
+      </a>
+
+      <a href="#marketplace" class="nav-item" data-page="marketplace">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Marketplace
+        <span class="nav-badge hot">HOT</span>
+      </a>
+      <a href="#analytics" class="nav-item" data-page="analytics">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="#notifications" class="nav-item" data-page="notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Alerts
+        <span class="nav-badge alert">3</span>
+      </a>
+      <a href="#admin" class="nav-item" id="adminNav" style="display:none" data-page="admin">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admin Panel
+        <span class="nav-badge alert" id="pendingBadge">0</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile" id="userProfile">
+        <div class="user-avatar" id="userAvatar">RS</div>
+        <div class="user-info">
+          <p class="user-name" id="userName">Srinidhi Reddy</p>
+          <p class="user-tier" id="userTier">⭐ Gold Member</p>
+        </div>
+        <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Header -->
+  <header class="mobile-header">
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="14" fill="url(#mobLogoGrad)"/>
+          <path d="M8 14L12 18L20 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="mobLogoGrad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#EC4899"/></linearGradient></defs>
+        </svg>
+      </div>
+      <span class="logo-text">RewardSync</span>
+    </a>
+    <div class="mobile-header-actions">
+      <button class="icon-btn" id="mobNotif" aria-label="Notifications">🔔</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+
+    <!-- ===== OVERVIEW PAGE ===== -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Good morning, Srinidhi Reddy! 👋</h1>
+          <p class="page-subtitle">You have 3 rewards expiring this week. Check your alerts!</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" id="syncBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Sync All
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Wallet Summary Cards -->
+      <div class="summary-grid">
+        <div class="summary-card summary-main">
+          <div class="summary-bg-orb"></div>
+          <p class="summary-label">Total Reward Balance</p>
+          <h2 class="summary-amount" id="totalBalance">₹1,847</h2>
+          <div class="summary-change positive">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            ₹237 earned this week
+          </div>
+          <div class="summary-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 73%"></div>
+            </div>
+            <span>73% of monthly average</span>
+          </div>
+        </div>
+        <div class="summary-card clickable" id="activeRewardsCard" role="button">
+          <div class="card-icon" style="--card-color:#7C3AED">💳</div>
+          <p class="summary-label">Active Rewards</p>
+          <h3 class="card-amount">24</h3>
+          <p class="card-sub">Across 8 platforms</p>
+        </div>
+        <div class="summary-card">
+          <div class="card-icon" style="--card-color:#F59E0B">⏰</div>
+          <p class="summary-label">Expiring Soon</p>
+          <h3 class="card-amount">3</h3>
+          <p class="card-sub">Within 7 days</p>
+        </div>
+        <div class="summary-card">
+          <div class="card-icon" style="--card-color:#10B981">✅</div>
+          <p class="summary-label">Saved This Month</p>
+          <h3 class="card-amount">₹642</h3>
+          <p class="card-sub">via RewardSync</p>
+        </div>
+      </div>
+
+      <!-- Reward Breakdown + AI Panel -->
+      <div class="content-grid">
+        <div class="content-card">
+          <div class="card-header" id="activeRewardsHeader" style="cursor:pointer">
+            <h3 style="display:flex; align-items:center; gap:8px">
+              Active Rewards 
+              <span id="sectorToggleIcon" style="font-size:14px; color:var(--text-muted); transition: transform 0.3s">▼</span>
+            </h3>
+            <button class="btn-link" id="viewAllRewards">View All</button>
+          </div>
+          <div class="category-filters" id="rewardFilters" style="display:none; max-height:0; overflow:hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom:0">
+            <button class="filter-chip active" data-category="all">All</button>
+            <button class="filter-chip" data-category="Food">Food</button>
+            <button class="filter-chip" data-category="Shopping">Shopping</button>
+            <button class="filter-chip" data-category="Travel">Travel</button>
+            <button class="filter-chip" data-category="Payments">Payments</button>
+          </div>
+          <div class="reward-list" id="rewardBreakdown" style="margin-top:15px">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="content-card ai-panel">
+          <div class="card-header">
+            <h3>🤖 AI Suggestions</h3>
+            <span class="ai-badge">LIVE</span>
+          </div>
+          <div class="ai-suggestions" id="aiSuggestions">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3>Recent Activity</h3>
+          <button class="btn-link">See All</button>
+        </div>
+        <div class="activity-list" id="activityList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WALLET PAGE ===== -->
+    <div class="page" id="page-wallet">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">My Wallet</h1>
+          <p class="page-subtitle">Manage and convert your reward balances</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="convertBtn">🔄 Convert Rewards</button>
+      </div>
+
+      <div class="wallet-hero-card">
+        <div class="wallet-hero-bg"></div>
+        <div class="wallet-hero-content">
+          <p>Total Available Balance</p>
+          <h1 id="walletTotalBalance">₹1,847</h1>
+          <div class="wallet-chips">
+            <span class="w-chip">💎 Gold Tier</span>
+            <span class="w-chip">🔒 Secured</span>
+            <span class="w-chip">⚡ Instant Redeem</span>
+          </div>
+        </div>
+        <div class="wallet-actions-row">
+          <button class="wallet-action-btn" data-action="convert">
+            <span>🔄</span>
+            <span>Convert</span>
+          </button>
+          <button class="wallet-action-btn" data-action="trade">
+            <span>🤝</span>
+            <span>Trade</span>
+          </button>
+          <button class="wallet-action-btn" data-action="redeem">
+            <span>💸</span>
+            <span>Redeem</span>
+          </button>
+          <button class="wallet-action-btn" data-action="gift">
+            <span>🎁</span>
+            <span>Gift</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="wallet-platforms-grid" id="walletPlatforms">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+
+
+    <!-- ===== CATEGORIES PAGE ===== -->
+    <div class="page" id="page-categories">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Browse by Sector</h1>
+          <p class="page-subtitle">Select a category to view your active rewards</p>
+        </div>
+      </div>
+
+      <div class="categories-grid" id="categoriesGrid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- ===== MARKETPLACE PAGE ===== -->
+
+    <div class="page" id="page-marketplace">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Reward Marketplace</h1>
+          <p class="page-subtitle">Trade and exchange coupons with other users</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="listRewardBtn">+ List My Reward</button>
+      </div>
+
+      <div class="mp-search-bar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="mpSearch" placeholder="Search rewards (e.g. Swiggy, Amazon...)"/>
+      </div>
+
+      <div class="mp-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="food">🍔 Food</button>
+        <button class="filter-btn" data-filter="shopping">🛒 Shopping</button>
+        <button class="filter-btn" data-filter="travel">✈️ Travel</button>
+        <button class="filter-btn" data-filter="entertainment">🎬 Entertainment</button>
+      </div>
+
+      <div class="marketplace-grid" id="marketplaceGrid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- ===== ANALYTICS PAGE ===== -->
+    <div class="page" id="page-analytics">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Analytics</h1>
+          <p class="page-subtitle">Understand your reward earning and spending patterns</p>
+        </div>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <h3>Reward Earning Trend</h3>
+          <div class="chart-container" id="earningChart">
+            <!-- Bar chart rendered in JS -->
+          </div>
+        </div>
+        <div class="analytics-card">
+          <h3>Rewards by Category</h3>
+          <div class="donut-container" id="categoryDonut">
+            <!-- Donut chart -->
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-stats-row" id="analyticsStats">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="analytics-grid" style="margin-top:24px">
+        <div class="analytics-card" style="grid-column: span 2">
+          <div class="card-header">
+            <h3>Best Platform Efficiency</h3>
+            <span style="color:var(--text-muted); font-size:12px">Highest redemption-to-earning ratio</span>
+          </div>
+          <div class="table-container" style="overflow-x:auto">
+            <table style="width:100%; border-collapse:collapse; color:white; font-size:14px">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border); text-align:left">
+                  <th style="padding:12px">Platform</th>
+                  <th style="padding:12px">Redemption Rate</th>
+                  <th style="padding:12px">Avg. Saving</th>
+                  <th style="padding:12px">Status</th>
+                </tr>
+              </thead>
+              <tbody id="platformEfficiencyTable">
+                <!-- Mock data -->
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:12px; display:flex; align-items:center; gap:8px"><span>🍔</span> Swiggy</td>
+                  <td style="padding:12px">
+                    <div style="width:100px; height:6px; background:rgba(255,255,255,0.05); border-radius:3px">
+                      <div style="width:92%; height:100%; background:var(--green); border-radius:3px"></div>
+                    </div>
+                  </td>
+                  <td style="padding:12px">₹180/order</td>
+                  <td style="padding:12px"><span style="color:var(--green)">High</span></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:12px; display:flex; align-items:center; gap:8px"><span>✈️</span> MakeMyTrip</td>
+                  <td style="padding:12px">
+                    <div style="width:100px; height:6px; background:rgba(255,255,255,0.05); border-radius:3px">
+                      <div style="width:65%; height:100%; background:var(--purple); border-radius:3px"></div>
+                    </div>
+                  </td>
+                  <td style="padding:12px">₹450/order</td>
+                  <td style="padding:12px"><span style="color:var(--purple-light)">Good</span></td>
+                </tr>
+                <tr>
+                  <td style="padding:12px; display:flex; align-items:center; gap:8px"><span>🛒</span> Amazon</td>
+                  <td style="padding:12px">
+                    <div style="width:100px; height:6px; background:rgba(255,255,255,0.05); border-radius:3px">
+                      <div style="width:88%; height:100%; background:var(--green); border-radius:3px"></div>
+                    </div>
+                  </td>
+                  <td style="padding:12px">₹210/order</td>
+                  <td style="padding:12px"><span style="color:var(--green)">High</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== NOTIFICATIONS PAGE ===== -->
+    <div class="page" id="page-notifications">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Alerts & Notifications</h1>
+          <p class="page-subtitle">Stay on top of expiring rewards and opportunities</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="markAllRead">Mark All Read</button>
+      </div>
+
+      <div class="notifications-list" id="notificationsList">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- ===== ADMIN PAGE ===== -->
+    <div class="page" id="page-admin">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Admin Controller</h1>
+          <p class="page-subtitle">Approve or reject new user requests</p>
+        </div>
+      </div>
+      <div class="content-card">
+        <div class="card-header">
+          <h3>Pending Approvals</h3>
+        </div>
+        <div class="table-container" style="overflow-x:auto; margin-top:20px">
+          <table style="width:100%; border-collapse:collapse; color:white">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border); text-align:left">
+                <th style="padding:12px">User</th>
+                <th style="padding:12px">Email</th>
+                <th style="padding:12px">Action</th>
+              </tr>
+            </thead>
+            <tbody id="pendingUsersTable">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+          <div id="noPendingMsg" style="display:none; text-align:center; padding:40px; color:var(--text-muted)">
+            No pending requests at the moment.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ User Settings</h3>
+        <button class="modal-close" id="closeSettingsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="settingsForm">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="setFullName" class="input-field" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white; padding:10px; width:100%"/>
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" id="setPhone" class="input-field" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white; padding:10px; width:100%"/>
+          </div>
+          <div class="form-group">
+            <label>Bio</label>
+            <textarea id="setBio" class="input-field" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white; padding:10px; width:100%; height:80px; resize:none"></textarea>
+          </div>
+          <div style="margin-top:20px; display:flex; gap:10px">
+            <button type="submit" class="btn btn-primary" style="flex:1">Save Changes</button>
+            <button type="button" class="btn btn-ghost" id="logoutBtn" style="color:var(--red)">Logout</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Tesseract OCR library -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- Confetti library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <div class="action-buttons-fixed">
+    <label class="btn-action-circle btn-action-primary" for="uploadScreenshot" title="Upload Reward Screenshot">
+      <span>📷</span>
+    </label>
+    <input type="file" id="uploadScreenshot" accept="image/*" style="display:none;"/>
+    <button class="btn-action-circle btn-action-secondary" id="scanSmsBtn" title="Scan SMS for Rewards">
+      <span>💬</span>
+    </button>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
