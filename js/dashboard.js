@@ -317,20 +317,8 @@ function initOverview() {
   const activeCard = document.getElementById('activeRewardsCard');
   if (activeCard) {
     activeCard.onclick = () => {
-        const header = document.getElementById('activeRewardsHeader');
-        if (header) {
-            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Force expand if hidden
-            const filtersContainer = document.getElementById('rewardFilters');
-            const icon = document.getElementById('sectorToggleIcon');
-            if (filtersContainer && (filtersContainer.style.display === 'none' || filtersContainer.style.maxHeight === '0px')) {
-                filtersContainer.style.display = 'flex';
-                filtersContainer.style.maxHeight = '200px';
-                filtersContainer.style.marginBottom = '20px';
-                if (icon) icon.style.transform = 'rotate(180deg)';
-                renderRewardBreakdown('all'); // Ensure it's showing all categorized sectors
-            }
-        }
+        navigateTo('categories');
+        window.location.hash = 'categories';
     };
   }
 
@@ -532,19 +520,33 @@ function renderCouponCard(c, now) {
 }
 
 function initCategories() {
-  const container = document.getElementById('categoriesGrid');
+  const container = document.getElementById('categoriesList');
   if (!container) return;
-  const categories = [
-    { name: 'Food', icon: '🍔', key: 'food' },
-    { name: 'Shopping', icon: '🛒', key: 'shopping' },
-    { name: 'Travel', icon: '✈️', key: 'travel' },
-    { name: 'Payments', icon: '📱', key: 'payments' },
-    { name: 'Other', icon: '🎁', key: 'other' }
-  ];
-  container.innerHTML = categories.map(cat => `
-    <div class="category-card" onclick="window.location.hash='wallet'">
-      <div class="category-icon">${cat.icon}</div>
-      <div class="category-name">${cat.name}</div>
+
+  const now = new Date().toISOString().split('T')[0];
+  
+  // Group all rewards by category
+  const grouped = REWARDS_DATA.reduce((acc, c) => {
+    const cat = c.category || 'Other';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(c);
+    return acc;
+  }, {});
+
+  if (REWARDS_DATA.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:50px; color:var(--text-muted)">No coupons found. Scan some to get started!</div>';
+      return;
+  }
+
+  container.innerHTML = Object.entries(grouped).map(([cat, coupons]) => `
+    <div class="wallet-category-section" style="margin-bottom:40px">
+      <h2 class="category-title" style="border-bottom: 2px solid var(--purple-main); padding-bottom:10px; margin-bottom:20px">
+        ${getCategoryIcon(cat)} ${cat} 
+        <span style="font-size:14px; font-weight:normal; color:var(--text-muted); margin-left:10px">(${coupons.length} coupons)</span>
+      </h2>
+      <div class="wallet-platforms-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:25px">
+        ${coupons.map(c => renderCouponCard(c, now)).join('')}
+      </div>
     </div>
   `).join('');
 }
