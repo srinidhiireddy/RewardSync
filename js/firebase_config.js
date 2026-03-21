@@ -22,7 +22,9 @@ if (!firebase.apps.length) {
 
 const auth = firebase.auth();
 const db = firebase.firestore();
+const messaging = firebase.messaging();
 
 // Export for global use
 window.auth = auth;
 window.db = db;
+window.messaging = messaging;

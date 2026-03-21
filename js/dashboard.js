@@ -131,6 +131,7 @@ async function loadBackendData() {
         // Load Rewards
         loadUserRewards(user.uid);
         fetchPendingCount();
+        initNotifications(user.uid);
         handleHash();
       } else {
         // Fallback for missing profile
@@ -502,11 +503,13 @@ function getCategoryIcon(cat) {
 function renderCouponCard(c, now) {
     const isExpired = c.expiryDate < now;
     const isUsed = c.status === 'used';
+    const isInTrade = c.status === 'in_trade';
     let statusLabel = 'Available';
     let statusClass = 'status-available';
 
     if (isUsed) { statusLabel = 'Used'; statusClass = 'status-used'; }
     else if (isExpired) { statusLabel = 'Expired'; statusClass = 'status-expired'; }
+    else if (isInTrade) { statusLabel = 'In Trade'; statusClass = 'status-in-trade'; }
 
     return `
       <div class="platform-card coupon-box ${isExpired || isUsed ? 'opacity-muted' : ''}">
@@ -549,63 +552,177 @@ function initCategories() {
   `).join('');
 }
 
-function initMarketplace() {
+function initMarketplace(activeTab = 'available') {
   const container = document.getElementById('marketplaceGrid');
   if (!container) return;
-  container.innerHTML = MARKETPLACE_DATA.map(item => `
-    <div class="mp-card">
-      <div class="mp-card-header">
-        <div class="mp-icon-wrap" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); border-radius:8px; margin-right:12px">
-            ${getLogoHtml(item)}
-        </div>
-        <div>
-          <div class="mp-name">${item.name}</div>
-          <div class="mp-category">${item.category}</div>
-        </div>
-      </div>
-      <div class="mp-card-body">
-        <div class="mp-desc" style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${item.desc}</div>
-        <div class="mp-value-row">
-          <div class="mp-original">${formatCurrency(item.originalVal)}</div>
-          <div class="mp-asking">
-            <div class="mp-asking-label">Asking</div>
-            <div class="mp-asking-val">${formatCurrency(item.askingVal)}</div>
-          </div>
-        </div>
-      </div>
-      <div class="mp-card-footer" style="padding:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:11px;color:var(--text-muted)">${item.expiry}</span>
-        <button class="btn btn-primary btn-sm" onclick="handleTrade(${item.id}, '${item.name}')">Trade Now</button>
-      </div>
-    </div>
-  `).join('');
+
+  // Handle Tab Switching UI
+  document.querySelectorAll('.mp-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === activeTab);
+    tab.style.color = tab.dataset.tab === activeTab ? 'var(--text-primary)' : 'var(--text-muted)';
+    tab.style.borderBottom = tab.dataset.tab === activeTab ? '2px solid var(--purple-main)' : 'none';
+    tab.onclick = () => initMarketplace(tab.dataset.tab);
+  });
+
+  // Setup "Create Trade" button
+  const createBtn = document.getElementById('createTradeBtn');
+  if (createBtn) createBtn.onclick = openTradeModal;
+
+  renderMarketplaceList(container, activeTab);
 }
 
-async function handleTrade(id, name) {
+async function renderMarketplaceList(container, tab) {
+  const token = localStorage.getItem('auth_token');
+  let url = 'http://localhost:8000/marketplace';
+  if (tab === 'my-trades') url += '/my-trades';
+  
+  try {
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const trades = await res.json();
+    
+    if (trades.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted)">No ${tab} trades found.</div>`;
+      return;
+    }
+
+    container.innerHTML = trades.map(t => {
+      // Find the coupon data from REWARDS_DATA for display
+      const coupon = REWARDS_DATA.find(c => c.id === t.offered_coupon_id) || { platform: 'Unknown', value: 'N/A' };
+      const isMine = t.creator_user_id === window.currentUser?.id;
+
+      return `
+        <div class="mp-card" style="background:var(--bg-card); border-radius:16px; border:1px solid var(--border); overflow:hidden">
+          <div class="mp-card-header" style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
+             <div style="display:flex; align-items:center">
+                <div style="width:32px; height:32px; background:rgba(255,255,255,0.05); border-radius:6px; display:flex; align-items:center; justify-content:center; margin-right:10px">
+                    ${getLogoHtml(coupon)}
+                </div>
+                <div style="font-weight:600">${coupon.platform}</div>
+             </div>
+             <div style="font-size:11px; color:var(--text-muted)">ID: #${t.id}</div>
+          </div>
+          <div class="mp-card-body" style="padding:15px">
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px">User offering: <strong>${coupon.value}</strong></div>
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; margin-bottom:15px">
+               <div style="font-size:11px; color:var(--purple-light); text-transform:uppercase; margin-bottom:5px">Looking For:</div>
+               <div style="font-weight:600; font-size:14px">${t.requested_platform} (${t.requested_value})</div>
+            </div>
+            ${isMine ? `
+              <button class="btn btn-ghost btn-sm" style="width:100%; color:var(--red)" onclick="cancelTrade(${t.id})">Cancel Request</button>
+            ` : `
+              <button class="btn btn-primary btn-sm" style="width:100%" onclick="acceptTradeFlow(${t.id}, '${coupon.platform}')">Accept Trade</button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--red)">Failed to load marketplace.</div>`;
+  }
+}
+
+function openTradeModal() {
+  const modal = document.getElementById('createTradeModal');
+  const select = document.getElementById('tradeCouponSelect');
+  if (!modal || !select) return;
+
+  // Filter active coupons from My Wallet
+  const activeCoupons = REWARDS_DATA.filter(c => c.status === 'active');
+  
+  select.innerHTML = '<option value="" disabled selected>Choose a coupon...</option>' + 
+    activeCoupons.map(c => `<option value="${c.id}">${c.platform} - ${c.value} (Exp: ${c.expiry})</option>`).join('');
+
+  modal.classList.add('open');
+  
+  document.getElementById('closeTradeModal').onclick = () => modal.classList.remove('open');
+  document.getElementById('createTradeForm').onsubmit = handleCreateTrade;
+}
+
+async function handleCreateTrade(e) {
+  e.preventDefault();
+  const token = localStorage.getItem('auth_token');
+  const payload = {
+    offered_coupon_id: parseInt(document.getElementById('tradeCouponSelect').value),
+    requested_platform: document.getElementById('reqPlatform').value,
+    requested_value: document.getElementById('reqValue').value
+  };
+
+  try {
+    const res = await fetch('http://localhost:8000/marketplace/create-trade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    
+    if (res.ok) {
+      showToast('Trade listing created!', 'success');
+      document.getElementById('createTradeModal').classList.remove('open');
+      initMarketplace('available');
+      loadBackendData(); 
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Failed to create trade', 'error');
+    }
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function acceptTradeFlow(tradeId, platform) {
   if (!window.currentUser || window.currentUser.is_approved !== 1) {
-    showToast('Your account must be approved by admin to trade.', 'error');
+    showToast('Admin approval required to trade.', 'error');
     return;
   }
-  if (id === 0) {
-    showToast(`Trade request for ${name} sent!`, 'success');
+
+  const myCoupons = REWARDS_DATA.filter(c => c.status === 'active');
+  if (myCoupons.length === 0) {
+    showToast("You don't have any active coupons to trade!", "error");
     return;
   }
+
+  const selection = prompt(`To accept trade for ${platform}, select your coupon ID to offer:\n` + 
+    myCoupons.map(c => `[ID:${c.id}] ${c.platform} ${c.value}`).join('\n'));
+    
+  if (!selection) return;
+
   const token = localStorage.getItem('auth_token');
   try {
-    const res = await fetch(`http://localhost:8000/marketplace/accept/${id}`, {
+    const res = await fetch(`http://localhost:8000/marketplace/accept/${tradeId}?acceptor_coupon_id=${selection}`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
-      showToast('Trade successful!', 'success');
+      showToast('Trade completed successfully!', 'success');
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#7C3AED', '#EC4899'] });
+      initMarketplace('available');
       loadBackendData();
     } else {
-      const d = await res.json();
-      showToast(d.detail || 'Trade failed', 'error');
+      const err = await res.json();
+      showToast(err.detail || 'Trade failed', 'error');
     }
-  } catch(e) { showToast('Network error', 'error'); }
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
 }
-window.handleTrade = handleTrade;
+
+async function cancelTrade(id) {
+  const token = localStorage.getItem('auth_token');
+  try {
+    const res = await fetch(`http://localhost:8000/marketplace/cancel/${id}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      showToast('Trade cancelled.', 'info');
+      initMarketplace('my-trades');
+      loadBackendData();
+    }
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
+}
 
 function initAnalytics() {
   // 1. Earning Chart
@@ -1020,3 +1137,81 @@ document.addEventListener('DOMContentLoaded', () => {
   loadBackendData();
   initSettings();
 });
+
+// ============================================
+// 🔔 PUSH NOTIFICATIONS (FCM)
+// ============================================
+
+async function initNotifications(uid) {
+  try {
+    console.log("🔔 Initializing Push Notifications for UID:", uid);
+
+    // 1. Request Permission
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn("🚫 Notification permission denied.");
+      return;
+    }
+
+    // 2. Get FCM Token
+    const token = await messaging.getToken({
+      vapidKey: "BOM7_L9Y7_l9y7_L9Y7_l9y7_L9Y7_l9y7_L9Y7_l9y7_L9A" // Demo VAPID
+    }).catch(e => console.log("FCM Token error (likely missing valid VAPID):", e));
+
+    if (token) {
+      console.log("🎫 FCM Token Generated:", token);
+      // Save token to Firestore for this user
+      await db.collection('users').doc(uid).update({ fcmToken: token });
+    }
+
+    // 3. Handle Foreground Messages
+    messaging.onMessage((payload) => {
+      console.log("📩 Foreground Message Received:", payload);
+      showInAppNotification(payload.notification.title, payload.notification.body);
+    });
+
+  } catch (err) {
+    console.error("🔔 Notification Init Error:", err);
+  }
+}
+
+function showInAppNotification(title, body) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast info';
+  toast.style.cssText = `
+    border-left: 4px solid var(--purple-main);
+    background: rgba(20, 10, 40, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: slideInRight 0.5s ease forwards;
+  `;
+
+  toast.innerHTML = `
+    <div style="font-size:24px">🔔</div>
+    <div>
+      <div style="font-weight:700; color:white; margin-bottom:2px">${title}</div>
+      <div style="font-size:12px; color:var(--text-muted)">${body}</div>
+    </div>
+  `;
+
+  container.appendChild(toast);
+  
+  // Custom sound effect (optional)
+  const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+  audio.play().catch(() => {});
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(50px)';
+    setTimeout(() => toast.remove(), 500);
+  }, 7000);
+}

@@ -250,26 +250,27 @@
       <div class="page-header">
         <div>
           <h1 class="page-title">Reward Marketplace</h1>
-          <p class="page-subtitle">Trade and exchange coupons with other users</p>
+          <p class="page-subtitle">Safe & Secure peer-to-peer coupon exchange</p>
         </div>
-        <button class="btn btn-primary btn-sm" id="listRewardBtn">+ List My Reward</button>
+        <button class="btn btn-primary" id="createTradeBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px"><path d="M12 5v14M5 12h14"/></svg>
+          Create Trade Listing
+        </button>
+      </div>
+
+      <div class="mp-tabs" style="display:flex; gap:20px; border-bottom:1px solid var(--border); margin-bottom:25px; padding-bottom:10px">
+        <button class="mp-tab active" data-tab="available" style="background:none; border:none; color:var(--text-primary); cursor:pointer; font-weight:600; font-family:var(--font-body); padding-bottom:10px; border-bottom:2px solid var(--purple-main)">Available Trades</button>
+        <button class="mp-tab" data-tab="my-trades" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:500; font-family:var(--font-body); padding-bottom:10px">My Trade Requests</button>
+        <button class="mp-tab" data-tab="completed" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:500; font-family:var(--font-body); padding-bottom:10px">Completed Trades</button>
       </div>
 
       <div class="mp-search-bar">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="mpSearch" placeholder="Search rewards (e.g. Swiggy, Amazon...)"/>
-      </div>
-
-      <div class="mp-filters">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="food">🍔 Food</button>
-        <button class="filter-btn" data-filter="shopping">🛒 Shopping</button>
-        <button class="filter-btn" data-filter="travel">✈️ Travel</button>
-        <button class="filter-btn" data-filter="entertainment">🎬 Entertainment</button>
+        <input type="text" id="mpSearch" placeholder="Search by platform or value..."/>
       </div>
 
       <div class="marketplace-grid" id="marketplaceGrid">
-        <!-- Populated by JS -->
+        <!-- Listings will be populated by JS -->
       </div>
     </div>
 
@@ -476,6 +477,57 @@
     </div>
   </div>
 
+  <!-- ===== CREATE TRADE MODAL ===== -->
+  <div class="modal" id="createTradeModal">
+    <div class="modal-content" style="max-width: 500px">
+      <div class="modal-header">
+        <h1 class="modal-title">Create New Trade</h1>
+        <button class="close-modal" id="closeTradeModal">&times;</button>
+      </div>
+      <form id="createTradeForm">
+        <div class="form-group" style="margin-bottom:20px">
+          <label class="form-label" style="display:block; margin-bottom:10px; font-weight:600">1. Select Coupon from Wallet</label>
+          <select id="tradeCouponSelect" class="form-input" style="width:100%; padding:12px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white" required>
+            <option value="" disabled selected>Choose a coupon...</option>
+            <!-- Populated by JS -->
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+          <label class="form-label" style="display:block; margin-bottom:10px; font-weight:600">2. Trade Preference (Looking For)</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+            <div>
+              <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px">Platform Preference</label>
+              <select id="reqPlatform" class="form-input" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white">
+                <option value="Any">Any Platform</option>
+                <option value="Amazon">Amazon</option>
+                <option value="Swiggy">Swiggy</option>
+                <option value="Zomato">Zomato</option>
+                <option value="Flipkart">Flipkart</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px">Value Preference</label>
+              <select id="reqValue" class="form-input" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white">
+                <option value="Equal">Equal Value</option>
+                <option value="Any">Any Value</option>
+                <option value="Higher">Higher Value</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(124,58,237,0.1); padding:15px; border-radius:12px; margin-bottom:25px; border:1px dashed var(--purple-main)">
+          <p style="font-size:12px; color:var(--purple-light); line-height:1.5; margin:0">
+            <strong>Note:</strong> Once listed, your coupon status will change to <span style="color:var(--yellow)">"In Trade"</span> and it cannot be used until the trade is cancelled or completed.
+          </p>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:14px">Post Trade Listing</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -500,6 +552,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-compat.js"></script>
   
   <!-- Firebase Configuration -->
   <script src="js/firebase_config.js"></script>
