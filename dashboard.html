@@ -211,31 +211,21 @@
           <div class="wallet-chips">
             <span class="w-chip">💎 Gold Tier</span>
             <span class="w-chip">🔒 Secured</span>
-            <span class="w-chip">⚡ Instant Redeem</span>
+            <span class="w-chip">⚡ Instant Scan</span>
           </div>
-        </div>
-        <div class="wallet-actions-row">
-          <button class="wallet-action-btn" data-action="convert">
-            <span>🔄</span>
-            <span>Convert</span>
-          </button>
-          <button class="wallet-action-btn" data-action="trade">
-            <span>🤝</span>
-            <span>Trade</span>
-          </button>
-          <button class="wallet-action-btn" data-action="redeem">
-            <span>💸</span>
-            <span>Redeem</span>
-          </button>
-          <button class="wallet-action-btn" data-action="gift">
-            <span>🎁</span>
-            <span>Gift</span>
-          </button>
         </div>
       </div>
 
+      <!-- Wallet Filters -->
+      <div class="wallet-tabs" id="walletTabs">
+        <button class="tab-btn active" data-filter="all">All</button>
+        <button class="tab-btn" data-filter="available">Available</button>
+        <button class="tab-btn" data-filter="used">Used</button>
+        <button class="tab-btn" data-filter="expired">Expired</button>
+      </div>
+
       <div class="wallet-platforms-grid" id="walletPlatforms">
-        <!-- Populated by JS -->
+        <!-- Organized Categories & Coupons Populated by JS -->
       </div>
     </div>
 
@@ -443,6 +433,47 @@
           </div>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- OCR Confirmation Modal -->
+  <div class="modal-overlay" id="ocrModal">
+    <div class="modal-content ocr-confirm-modal">
+        <div class="modal-header">
+            <h3>🔍 Confirm Coupon Details</h3>
+            <button class="btn-icon" id="closeOcrModal">✕</button>
+        </div>
+        <div class="ocr-preview-box">
+            <div class="ocr-field">
+                <label>Platform</label>
+                <input type="text" id="ocrPlatform" placeholder="e.g. Amazon">
+            </div>
+            <div class="ocr-field">
+                <label>Coupon Code</label>
+                <input type="text" id="ocrCode" placeholder="e.g. SAVE50">
+            </div>
+            <div class="ocr-field">
+                <label>Value / Discount</label>
+                <input type="text" id="ocrValue" placeholder="e.g. ₹200 OFF">
+            </div>
+            <div class="ocr-field">
+                <label>Category</label>
+                <select id="ocrCategory">
+                    <option value="Shopping">Shopping</option>
+                    <option value="Food">Food delivery</option>
+                    <option value="Travel">Travel & Ride</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="ocr-field">
+                <label>Expiry Date</label>
+                <input type="date" id="ocrExpiry">
+            </div>
+        </div>
+        <div class="modal-actions" style="margin-top:20px">
+            <button class="btn btn-primary" id="confirmOcrBtn" style="width:100%">✅ Confirm & Add to Wallet</button>
+        </div>
     </div>
   </div>
 

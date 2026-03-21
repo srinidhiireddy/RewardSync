@@ -5,18 +5,19 @@
 'use strict';
 
 // ============================================
-// DATA
+// DATA (Coupons System)
 // ============================================
-const MOCK_REWARDS = [
-  { platform: 'PhonePe', emoji: '📱', type: 'Payments', balance: 120, points: null, expiryLabel: 'Expires Mar 15', expiryClass: 'expiry-warn', color: '#7C3AED' },
-  { platform: 'Swiggy', emoji: '🍔', type: 'Food', balance: 200, points: null, expiryLabel: 'Expires in 4 days', expiryClass: 'expiry-alert', color: '#F59E0B' },
-  { platform: 'Amazon Pay', emoji: '🛒', type: 'Shopping', balance: 320, points: null, expiryLabel: 'No Expiry', expiryClass: 'expiry-ok', color: '#10B981' },
-  { platform: 'CRED', emoji: '💳', type: 'Travel', balance: 180, points: 360, expiryLabel: 'Expires in 2 days', expiryClass: 'expiry-alert', color: '#3B82F6' },
-  { platform: 'MakeMyTrip', emoji: '✈️', type: 'Travel', balance: 500, points: null, expiryLabel: 'Expires Apr 30', expiryClass: 'expiry-warn', color: '#EC4899' },
-  { platform: 'HDFC Rewards', emoji: '🏦', type: 'Other', balance: 557, points: 1114, expiryLabel: 'Expires Dec 31', expiryClass: 'expiry-ok', color: '#6366F1' },
+const COUPONS_DATA = [
+  { id: 'c1', platform: 'Amazon', code: 'SAVE200', value: '₹200 OFF', category: 'Shopping', logoUrl: 'assets/logos/amazon.png', emoji: '🛒', status: 'active', expiryDate: '2026-04-12', createdAt: Date.now() },
+  { id: 'c2', platform: 'Swiggy', code: 'SWIGGYIT', value: '₹100 OFF', category: 'Food', logoUrl: 'assets/logos/swiggy.png', emoji: '🍔', status: 'available', expiryDate: '2026-03-25', createdAt: Date.now() },
+  { id: 'c3', platform: 'Zomato', code: 'ZOMATO50', value: '50% OFF', category: 'Food', logoUrl: 'assets/logos/zomato.png', emoji: '🍕', status: 'active', expiryDate: '2026-03-10', createdAt: Date.now() },
+  { id: 'c4', platform: 'Uber', code: 'UBER150', value: '₹150 OFF', category: 'Travel', logoUrl: 'assets/logos/mmt.png', emoji: '🚕', status: 'available', expiryDate: '2026-04-01', createdAt: Date.now() },
+  { id: 'c5', platform: 'Flipkart', code: 'PLUSVIP', value: 'Flat ₹150 OFF', category: 'Shopping', logoUrl: '', emoji: '🔶', status: 'used', expiryDate: '2026-02-15', createdAt: Date.now() },
+  { id: 'c6', platform: 'BookMyShow', code: 'BMS200', value: '₹200 Discount', category: 'Entertainment', logoUrl: '', emoji: '🎬', status: 'active', expiryDate: '2026-03-28', createdAt: Date.now() },
+  { id: 'c7', platform: 'Netflix', code: 'NTFLX6M', value: '6 Months Free', category: 'Entertainment', logoUrl: '', emoji: '📺', status: 'available', expiryDate: '2026-08-15', createdAt: Date.now() },
 ];
 
-let REWARDS_DATA = [...MOCK_REWARDS];
+let REWARDS_DATA = [...COUPONS_DATA]; // Keeping name for compatibility
 let CONNECTIONS_DATA = [...MOCK_REWARDS];
 let TOTAL_BALANCE = MOCK_REWARDS.reduce((sum, r) => sum + (r.balance || 0), 0);
 
@@ -44,18 +45,18 @@ const ANALYTICS_OVERVIEW_STATS = [
 ];
 
 const MARKETPLACE_DATA = [
-  { id: 0, name: 'Swiggy', emoji: '🍔', category: 'food', originalVal: 200, askingVal: 160, desc: '₹200 Swiggy discount coupon valid on orders above ₹299', expiry: 'Expires Mar 8, 2026' },
-  { id: 0, name: 'Amazon', emoji: '🛒', category: 'shopping', originalVal: 500, askingVal: 420, desc: '₹500 Amazon Pay balance available for immediate transfer', expiry: 'Expires Mar 20, 2026' },
-  { id: 0, name: 'Zomato', emoji: '🍕', category: 'food', originalVal: 150, askingVal: 125, desc: '₹150 Zomato coupon, usable on any food order', expiry: 'Expires Mar 12, 2026' },
-  { id: 0, name: 'Air India', emoji: '✈️', category: 'travel', originalVal: 800, askingVal: 650, desc: '2000 Air India Miles (~₹800 value) for domestic flights', expiry: 'Expires Apr 30, 2026' },
-  { id: 0, name: 'BookMyShow', emoji: '🎬', category: 'entertainment', originalVal: 200, askingVal: 175, desc: '₹200 off on movie tickets. Valid for 2 tickets', expiry: 'Expires Mar 28, 2026' },
-  { id: 0, name: 'Flipkart', emoji: '🔶', category: 'shopping', originalVal: 300, askingVal: 260, desc: '₹300 Flipkart SuperCoin worth of value. No min order', expiry: 'Expires Apr 15, 2026' },
+  { id: 0, name: 'Swiggy', emoji: '🍔', logoUrl: 'assets/logos/swiggy.png', category: 'food', originalVal: 200, askingVal: 160, desc: '₹200 Swiggy discount coupon valid on orders above ₹299', expiry: 'Expires Mar 8, 2026' },
+  { id: 0, name: 'Amazon', emoji: '🛒', logoUrl: 'assets/logos/amazon.png', category: 'shopping', originalVal: 500, askingVal: 420, desc: '₹500 Amazon Pay balance available for immediate transfer', expiry: 'Expires Mar 20, 2026' },
+  { id: 0, name: 'Zomato', emoji: '🍕', logoUrl: 'assets/logos/zomato.png', category: 'food', originalVal: 150, askingVal: 125, desc: '₹150 Zomato coupon, usable on any food order', expiry: 'Expires Mar 12, 2026' },
+  { id: 0, name: 'Air India', emoji: '✈️', logoUrl: 'assets/logos/mmt.png', category: 'travel', originalVal: 800, askingVal: 650, desc: '2000 Air India Miles (~₹800 value) for domestic flights', expiry: 'Expires Apr 30, 2026' },
+  { id: 0, name: 'BookMyShow', emoji: '🎬', logoUrl: '', category: 'entertainment', originalVal: 200, askingVal: 175, desc: '₹200 off on movie tickets. Valid for 2 tickets', expiry: 'Expires Mar 28, 2026' },
+  { id: 0, name: 'Flipkart', emoji: '🔶', logoUrl: '', category: 'shopping', originalVal: 300, askingVal: 260, desc: '₹300 Flipkart SuperCoin worth of value. No min order', expiry: 'Expires Apr 15, 2026' },
 ];
 
 const NOTIFICATIONS_DATA = [
-  { type: 'urgent', icon: '⏰', iconBg: 'rgba(239,68,68,0.15)', title: 'CRED Reward Expiring in 2 Days!', desc: 'You have ₹180 (360 coins) in CRED that will expire on March 3rd. Use it before it\'s gone!', time: 'Just now', action: 'Use Now', unread: true },
-  { type: 'urgent', icon: '⚡', iconBg: 'rgba(245,158,11,0.15)', title: 'Swiggy Coupon Expires in 4 Days', desc: '₹200 Swiggy reward expires on March 5th. Order food now to redeem it at max value.', time: '15 min ago', action: 'Order Now', unread: true },
-  { type: 'unread', icon: '🤖', iconBg: 'rgba(124,58,237,0.15)', title: 'AI Tip: Best Redemption Combo Found', desc: 'Combine your Swiggy + CRED rewards for a total saving of ₹380 on your next food order tonight.', time: '1 hour ago', action: 'View Tip', unread: true },
+  { type: 'urgent', icon: '⏰', logoUrl: 'assets/logos/cred.png', iconBg: 'rgba(239,68,68,0.15)', title: 'CRED Reward Expiring in 2 Days!', desc: 'You have ₹180 (360 coins) in CRED that will expire on March 3rd. Use it before it\'s gone!', time: 'Just now', action: 'Use Now', unread: true },
+  { type: 'urgent', icon: '⚡', logoUrl: 'assets/logos/swiggy.png', iconBg: 'rgba(245,158,11,0.15)', title: 'Swiggy Coupon Expires in 4 Days', desc: '₹200 Swiggy reward expires on March 5th. Order food now to redeem it at max value.', time: '15 min ago', action: 'Order Now', unread: true },
+  { type: 'unread', icon: '🤖', logoUrl: '', iconBg: 'rgba(124,58,237,0.15)', title: 'AI Tip: Best Redemption Combo Found', desc: 'Combine your Swiggy + CRED rewards for a total saving of ₹380 on your next food order tonight.', time: '1 hour ago', action: 'View Tip', unread: true },
 ];
 
 const ACTIVITY_DATA = [
@@ -204,6 +205,14 @@ function formatCurrency(val) {
   return '₹' + (val || 0).toLocaleString('en-IN');
 }
 
+function getLogoHtml(item, customClass = '') {
+    if (item.logoUrl) {
+        return `<img src="${item.logoUrl}" class="platform-logo ${customClass}" alt="${item.platform || item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                <span class="platform-emoji-fallback" style="display:none">${item.emoji || '🎁'}</span>`;
+    }
+    return `<span class="platform-emoji">${item.emoji || '🎁'}</span>`;
+}
+
 function animateCounter(el, target, prefix = '', suffix = '', duration = 1500) {
   if (!el) return;
   const start = performance.now();
@@ -285,9 +294,25 @@ function initOverview() {
   setupRewardFilters();
   renderAiSuggestions();
   renderActivityList();
+  initOcrActions();
   
   const totalEl = document.getElementById('totalBalance');
   if (totalEl) animateCounter(totalEl, TOTAL_BALANCE, '₹');
+
+  const activeCard = document.getElementById('activeRewardsCard');
+  if (activeCard) {
+    activeCard.onclick = () => {
+        const header = document.getElementById('activeRewardsHeader');
+        if (header) {
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Force expand if hidden
+            const filtersContainer = document.getElementById('rewardFilters');
+            if (filtersContainer && filtersContainer.style.display === 'none') {
+                header.click(); 
+            }
+        }
+    };
+  }
 
   const viewAllBtn = document.getElementById('viewAllRewards');
   if (viewAllBtn) viewAllBtn.onclick = () => navigateTo('wallet');
@@ -331,29 +356,47 @@ function setupRewardFilters() {
 function renderRewardBreakdown(category = 'all') {
   const container = document.getElementById('rewardBreakdown');
   if (!container) return;
+  const now = new Date().toISOString().split('T')[0];
   
-  const filteredData = category === 'all' 
+  const filtered = category === 'all' 
     ? REWARDS_DATA 
-    : REWARDS_DATA.filter(r => r.type === category);
+    : REWARDS_DATA.filter(r => r.category === category);
 
-  if (filteredData.length === 0) {
-    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); width:100%">No rewards found in this category.</div>';
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); width:100%">No coupons found.</div>';
     return;
   }
 
-  container.innerHTML = filteredData.slice(0, 6).map(r => `
-    <div class="reward-item" onclick="navigateTo('wallet')" style="cursor:pointer">
-      <div class="reward-platform-icon" style="background:${r.color}15; color:${r.color}">${r.emoji}</div>
-      <div class="reward-info">
-        <div class="reward-platform">${r.platform}</div>
-        <div class="reward-desc">${r.type}</div>
-      </div>
-      <div style="text-align:right">
-        <div class="reward-value">${formatCurrency(r.balance)}</div>
-        <span class="reward-expiry ${r.expiryClass}">${r.expiryLabel}</span>
-      </div>
-    </div>
-  `).join('');
+  const grouped = filtered.reduce((acc, r) => {
+    const cat = r.category || 'Other';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(r);
+    return acc;
+  }, {});
+
+  let html = '';
+  for (const [cat, items] of Object.entries(grouped)) {
+    html += `<div class="reward-category-title">${cat}</div>`;
+    html += items.map(r => {
+        const isPast = r.expiryDate < now;
+        return `
+          <div class="reward-item" onclick="navigateTo('wallet')" style="cursor:pointer; ${isPast ? 'opacity:0.6' : ''}">
+            <div class="reward-platform-icon" style="background:rgba(255,255,255,0.03); color:white; display:flex; align-items:center; justify-content:center">
+              ${getLogoHtml(r)}
+            </div>
+            <div class="reward-info">
+              <div class="reward-platform">${r.platform}</div>
+              <div class="reward-desc" style="font-family:monospace; color:var(--purple-light)">${r.code}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="reward-value">${r.value}</div>
+              <span class="reward-expiry ${isPast ? 'expiry-alert' : 'expiry-ok'}">${isPast ? 'Expired' : 'Expires ' + r.expiryDate}</span>
+            </div>
+          </div>
+        `;
+    }).join('');
+  }
+  container.innerHTML = html;
 }
 
 function renderAiSuggestions() {
@@ -386,27 +429,86 @@ function renderActivityList() {
   `).join('');
 }
 
-function initWallet() {
-  const walletTotalEl = document.getElementById('walletTotalBalance');
-  if (walletTotalEl) walletTotalEl.textContent = formatCurrency(TOTAL_BALANCE);
-
+function initWallet(filter = 'all') {
   const container = document.getElementById('walletPlatforms');
   if (!container) return;
-  container.innerHTML = REWARDS_DATA.map(r => `
-    <div class="platform-card">
-      <div class="platform-card-header">
-        <div class="platform-emoji">${r.emoji}</div>
-        <div>
-          <div class="platform-name">${r.platform}</div>
-          <div class="platform-type">${r.type}</div>
-        </div>
-      </div>
-      <div class="platform-balance">
-        <div class="platform-amount">${formatCurrency(r.balance)}</div>
-        <div class="platform-status-dot"></div>
+
+  const now = new Date().toISOString().split('T')[0];
+  
+  // 1. Filter logic
+  let filtered = REWARDS_DATA.filter(c => {
+    const isPast = c.expiryDate < now;
+    if (filter === 'available') return c.status !== 'used' && !isPast;
+    if (filter === 'used') return c.status === 'used';
+    if (filter === 'expired') return isPast;
+    return true; // all
+  });
+
+  // 2. Clear and Render Tabs
+  const tabs = document.querySelectorAll('#walletTabs .tab-btn');
+  tabs.forEach(t => {
+      t.classList.toggle('active', t.dataset.filter === filter);
+      t.onclick = () => initWallet(t.dataset.filter);
+  });
+
+  // 3. Group by Category
+  const grouped = filtered.reduce((acc, c) => {
+    const cat = c.category || 'Other';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(c);
+    return acc;
+  }, {});
+
+  if (filtered.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted); grid-column: 1/-1">No coupons found for "${filter}".</div>`;
+      return;
+  }
+
+  container.innerHTML = Object.entries(grouped).map(([cat, coupons]) => `
+    <div class="wallet-category-section" style="grid-column: 1/-1">
+      <h2 class="category-title">${getCategoryIcon(cat)} ${cat}</h2>
+      <div class="wallet-platforms-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px">
+        ${coupons.map(c => renderCouponCard(c, now)).join('')}
       </div>
     </div>
   `).join('');
+}
+
+function getCategoryIcon(cat) {
+    const icons = { Shopping: '🛒', Food: '🍔', Travel: '🚕', Entertainment: '🎬', Other: '🎁' };
+    return icons[cat] || '🎁';
+}
+
+function renderCouponCard(c, now) {
+    const isExpired = c.expiryDate < now;
+    const isUsed = c.status === 'used';
+    let statusLabel = 'Available';
+    let statusClass = 'status-available';
+
+    if (isUsed) { statusLabel = 'Used'; statusClass = 'status-used'; }
+    else if (isExpired) { statusLabel = 'Expired'; statusClass = 'status-expired'; }
+
+    return `
+      <div class="platform-card coupon-box ${isExpired || isUsed ? 'opacity-muted' : ''}">
+        <div class="platform-card-header">
+          <div class="platform-icon-wrap" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); border-radius:8px; margin-right:12px">
+              ${getLogoHtml(c)}
+          </div>
+          <div style="flex:1">
+            <div class="platform-name">${c.platform}</div>
+            <div class="coupon-code-label" style="font-family:monospace; color:var(--purple-light); font-weight:700; font-size:14px; margin-top:2px">${c.code}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="platform-amount" style="font-size:16px">${c.value}</div>
+            <div class="status-badge ${statusClass}">${statusLabel}</div>
+          </div>
+        </div>
+        <div class="platform-balance" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px">
+          <div style="font-size:12px; color:var(--text-muted)">Expires: ${c.expiryDate}</div>
+          <div class="platform-status-dot" style="background:${isExpired ? 'var(--red)' : (isUsed ? '#9ca3af' : 'var(--green)')}"></div>
+        </div>
+      </div>
+    `;
 }
 
 function initCategories() {
@@ -433,7 +535,9 @@ function initMarketplace() {
   container.innerHTML = MARKETPLACE_DATA.map(item => `
     <div class="mp-card">
       <div class="mp-card-header">
-        <div class="mp-icon">${item.emoji}</div>
+        <div class="mp-icon-wrap" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); border-radius:8px; margin-right:12px">
+            ${getLogoHtml(item)}
+        </div>
         <div>
           <div class="mp-name">${item.name}</div>
           <div class="mp-category">${item.category}</div>
@@ -562,7 +666,9 @@ function initNotifications() {
   if (!container) return;
   container.innerHTML = NOTIFICATIONS_DATA.map(n => `
     <div class="notification-item ${n.unread ? 'unread' : ''}">
-      <div class="notif-icon" style="background:${n.iconBg}">${n.icon}</div>
+      <div class="notif-logo-wrap" style="background:${n.iconBg}">
+        ${getLogoHtml(n)}
+      </div>
       <div class="notif-body">
         <div class="notif-title">${n.title}</div>
         <div class="notif-desc">${n.desc}</div>
@@ -630,7 +736,11 @@ async function initAdmin() {
         <td colspan="3" style="text-align:center; padding:30px">
             <div class="btn-spinner" style="display:inline-block; margin-bottom:10px"><div class="spinner-ring"></div></div>
             <div id="adminStatusMsg">Connecting to Cloud...</div>
-            <button class="btn btn-ghost btn-sm" style="margin-top:10px; font-size:11px" onclick="forceAdminRefresh()">Stuck? Try Manual Refresh</button>
+            <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+                <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="forceAdminRefresh()">Manual Refresh</button>
+                <button class="btn btn-ghost btn-sm" style="font-size:11px; border-color:var(--purple)" onclick="debugPermissions()">🔍 Debug Permissions</button>
+                <button class="btn btn-ghost btn-sm" style="font-size:11px; color:var(--red)" onclick="showAllUsers()">🛑 Show All Users (Fallback)</button>
+            </div>
         </td>
     </tr>`;
 
@@ -670,13 +780,57 @@ async function initAdmin() {
 async function forceAdminRefresh() {
     const container = document.getElementById('pendingUsersTable');
     try {
+        console.log("Admin: Manual Refresh Triggered");
         const snapshot = await db.collection('users').where('pending', '==', true).get();
+        console.log("Admin: Manual Fetch Count:", snapshot.size);
         renderAdminList(snapshot.docs);
     } catch (e) {
         console.error("Manual refresh fail:", e);
+        showAlert('Admin init error: ' + e.message, 'error');
     }
 }
 window.forceAdminRefresh = forceAdminRefresh;
+
+async function debugPermissions() {
+    console.log("--- DEBUG PERMISSIONS ---");
+    if (!auth.currentUser) {
+        console.error("No user logged in to Auth!");
+        return;
+    }
+    console.log("Auth UID:", auth.currentUser.uid);
+    try {
+        const myDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+        if (myDoc.exists) {
+            console.log("Your Firestore Profile:", myDoc.data());
+        } else {
+            console.error("Your UID doesn't have a document in Firestore 'users' collection!");
+        }
+        
+        console.log("Attempting to read ANY user document...");
+        const allUsers = await db.collection('users').limit(5).get();
+        console.log("Successfully read", allUsers.size, "users from collection.");
+        allUsers.forEach(d => console.log("User Found:", d.id, d.data()));
+        
+    } catch (e) {
+        console.error("Debug Query failed:", e);
+    }
+}
+window.debugPermissions = debugPermissions;
+
+async function showAllUsers() {
+    console.log("Admin: Fallback - Showing ALL Users (Unfiltered)");
+    const container = document.getElementById('pendingUsersTable');
+    try {
+        const snapshot = await db.collection('users').limit(50).get();
+        console.log("Admin: Total users found:", snapshot.size);
+        renderAdminList(snapshot.docs);
+        showToast("Showing all users (Unfiltered)", "info");
+    } catch (e) {
+        console.error("Show all failed:", e);
+        showToast("Error reading collection: " + e.message, "error");
+    }
+}
+window.showAllUsers = showAllUsers;
 
 function renderAdminList(docs) {
     const container = document.getElementById('pendingUsersTable');
@@ -730,20 +884,23 @@ function updatePendingBadge(count) {
 
 async function handleAuth(uid, approve) {
   try {
+    console.log(`Admin: ${approve ? 'Approving' : 'Rejecting'} user UID: ${uid}`);
     if (approve) {
       await db.collection('users').doc(uid).update({
           pending: false,
           isApproved: true
       });
-      showToast('User Approved', 'success');
+      showToast('User Approved Successfully!', 'success');
+      console.log("Admin: Firestore update complete for UID:", uid);
     } else {
       await db.collection('users').doc(uid).delete();
-      showToast('User Rejected', 'success');
+      showToast('User Rejected', 'error');
     }
     initAdmin();
     fetchPendingCount();
-  } catch (e) {
-      showToast('Action failed', 'error');
+  } catch (err) {
+    console.error("Approval error:", err);
+    showToast("Error: " + err.message, "error");
   }
 }
 window.handleAuth = handleAuth;
@@ -799,28 +956,12 @@ async function handleOcr(file) {
                           text.match(/(\d+)\s*(?:off|discount|reward)/i);
         
         let amount = 0;
-        if (amountMatch) {
-            amount = parseFloat(amountMatch[1]);
-        } else {
-            const numbers = text.match(/\d+/g);
-            if (numbers) {
-                const vals = numbers.map(Number).filter(n => n >= 10 && n <= 2000);
-                if (vals.length > 0) amount = Math.max(...vals);
-            }
-        }
-
-        if (amount > 0) {
-            addRewardToLocal(amount, "Detected Reward");
-            showToast(`Successfully extracted ₹${amount} reward!`, 'success');
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        } else {
-            showToast('Could not find specific amount. Logged as ₹100.', 'info');
-            addRewardToLocal(100, "Manual Scan");
-        }
+        console.log("OCR Raw Text:", text);
+        
+        const extracted = parseCouponData(text);
+        openOcrModal(extracted);
     } catch (err) {
         console.error("OCR Error:", err);
-        showToast('Scanning failed. Using default ₹150.', 'error');
-        addRewardToLocal(150, "Auto-Retry Scan");
     }
 }
 

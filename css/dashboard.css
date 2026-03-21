@@ -1201,3 +1201,160 @@
   color: white;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
+.platform-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.reward-card .platform-logo {
+  width: 32px;
+  height: 32px;
+  margin-right: 4px;
+}
+
+.market-card .platform-logo {
+  width: 28px;
+  height: 28px;
+}
+
+.notif-logo-wrap {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.notif-logo-wrap img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.reward-category-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 20px 0 10px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reward-category-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.5;
+}
+
+/* Wallet Tabs */
+.wallet-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  padding: 4px;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius-lg);
+  width: fit-content;
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.tab-btn:hover {
+  color: white;
+}
+
+.tab-btn.active {
+  background: var(--purple-main);
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-top: 8px;
+  display: inline-block;
+}
+
+.status-available { background: rgba(16,185,129,0.15); color: #34d399; }
+.status-used { background: rgba(107,114,128,0.15); color: #9ca3af; }
+.status-expired { background: rgba(239,68,68,0.15); color: #f87171; }
+
+/* OCR Modal Improvements */
+.ocr-confirm-modal {
+  max-width: 450px;
+  width: 90%;
+}
+
+.ocr-preview-box {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.ocr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ocr-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ocr-field input, .ocr-field select {
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 14px;
+  transition: border-color var(--transition);
+}
+
+.ocr-field input:focus {
+  outline: none;
+  border-color: var(--purple-main);
+}
+
+/* Category Containers */
+.wallet-category-section {
+  margin-bottom: 40px;
+}
+
+.category-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
