@@ -552,177 +552,231 @@ function initCategories() {
   `).join('');
 }
 
-function initMarketplace(activeTab = 'available') {
-  const container = document.getElementById('marketplaceGrid');
-  if (!container) return;
+function initMarketplace(activeTab = 'exchange') {
+    const tabs = document.querySelectorAll('.mp-tab');
+    if (tabs.length === 0) return;
 
-  // Handle Tab Switching UI
-  document.querySelectorAll('.mp-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.tab === activeTab);
-    tab.style.color = tab.dataset.tab === activeTab ? 'var(--text-primary)' : 'var(--text-muted)';
-    tab.style.borderBottom = tab.dataset.tab === activeTab ? '2px solid var(--purple-main)' : 'none';
-    tab.onclick = () => initMarketplace(tab.dataset.tab);
-  });
+    // 1. Tab Switching UI
+    tabs.forEach(tab => {
+        const isCurrent = tab.dataset.tab === activeTab;
+        tab.classList.toggle('active', isCurrent);
+        tab.style.background = isCurrent ? 'var(--purple-main)' : 'none';
+        tab.style.color = isCurrent ? 'white' : 'var(--text-muted)';
+        tab.style.fontWeight = isCurrent ? '600' : '500';
+        tab.onclick = () => initMarketplace(tab.dataset.tab);
+    });
 
-  // Setup "Create Trade" button
-  const createBtn = document.getElementById('createTradeBtn');
-  if (createBtn) createBtn.onclick = openTradeModal;
+    // 2. Hide all tab content, show active one
+    document.querySelectorAll('.mp-tab-content').forEach(content => {
+        content.style.display = content.id === `tab-${activeTab}` ? 'block' : 'none';
+    });
 
-  renderMarketplaceList(container, activeTab);
+    // 3. Populate Active Count Stat
+    const activeDealsEl = document.getElementById('activeDealsCount');
+    if (activeDealsEl) activeDealsEl.innerText = (REWARDS_DATA.filter(r => r.status === 'active').length + 12).toString();
+
+    // 4. Tab Specific Logic
+    if (activeTab === 'exchange') {
+        renderExchangeTab();
+    } else if (activeTab === 'trending') {
+        renderTrendingTab();
+    } else if (activeTab === 'history') {
+        renderHistoryTab();
+    }
 }
 
-async function renderMarketplaceList(container, tab) {
-  const token = localStorage.getItem('auth_token');
-  let url = 'http://localhost:8000/marketplace';
-  if (tab === 'my-trades') url += '/my-trades';
-  
-  try {
-    const res = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const trades = await res.json();
-    
-    if (trades.length === 0) {
-      container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted)">No ${tab} trades found.</div>`;
-      return;
-    }
+let selectedExchangeRewardId = null;
 
-    container.innerHTML = trades.map(t => {
-      // Find the coupon data from REWARDS_DATA for display
-      const coupon = REWARDS_DATA.find(c => c.id === t.offered_coupon_id) || { platform: 'Unknown', value: 'N/A' };
-      const isMine = t.creator_user_id === window.currentUser?.id;
+function renderExchangeTab() {
+    const rewardsContainer = document.getElementById('exchangeableRewards');
+    const offersContainer = document.getElementById('exchangeOffers');
+    if (!rewardsContainer || !offersContainer) return;
 
-      return `
-        <div class="mp-card" style="background:var(--bg-card); border-radius:16px; border:1px solid var(--border); overflow:hidden">
-          <div class="mp-card-header" style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
-             <div style="display:flex; align-items:center">
-                <div style="width:32px; height:32px; background:rgba(255,255,255,0.05); border-radius:6px; display:flex; align-items:center; justify-content:center; margin-right:10px">
-                    ${getLogoHtml(coupon)}
-                </div>
-                <div style="font-weight:600">${coupon.platform}</div>
-             </div>
-             <div style="font-size:11px; color:var(--text-muted)">ID: #${t.id}</div>
-          </div>
-          <div class="mp-card-body" style="padding:15px">
-            <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px">User offering: <strong>${coupon.value}</strong></div>
-            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; margin-bottom:15px">
-               <div style="font-size:11px; color:var(--purple-light); text-transform:uppercase; margin-bottom:5px">Looking For:</div>
-               <div style="font-weight:600; font-size:14px">${t.requested_platform} (${t.requested_value})</div>
+    // Filter user's rewards for exchange (Min value ₹50)
+    const exchangeable = REWARDS_DATA.filter(r => r.value >= 50 && r.status === 'active');
+
+    if (exchangeable.length === 0) {
+        rewardsContainer.innerHTML = `
+            <div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted)">
+                <p>No rewards available for exchange (Min. ₹50 required)</p>
+            </div>`;
+    } else {
+        rewardsContainer.innerHTML = exchangeable.map(r => `
+            <div class="exchange-reward-card" 
+                 onclick="selectRewardForExchange(${r.id})" 
+                 style="background:rgba(255,255,255,0.03); border:1px solid ${selectedExchangeRewardId == r.id ? 'var(--purple-main)' : 'var(--border)'}; padding:12px; border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:0.2s; ${selectedExchangeRewardId == r.id ? 'box-shadow: 0 0 15px rgba(124,58,237,0.2)' : ''}">
+                 <div style="width:40px; height:40px; background:rgba(255,255,255,0.05); border-radius:8px; display:flex; align-items:center; justify-content:center">
+                    ${getLogoHtml(r)}
+                 </div>
+                 <div style="flex:1">
+                    <p style="margin:0; font-size:13px; font-weight:600">${r.platform}</p>
+                    <p style="margin:0; font-size:11px; color:var(--text-muted)">₹${r.value}</p>
+                 </div>
+                 ${selectedExchangeRewardId == r.id ? '<div style="color:var(--purple-light)">⭐</div>' : ''}
             </div>
-            ${isMine ? `
-              <button class="btn btn-ghost btn-sm" style="width:100%; color:var(--red)" onclick="cancelTrade(${t.id})">Cancel Request</button>
-            ` : `
-              <button class="btn btn-primary btn-sm" style="width:100%" onclick="acceptTradeFlow(${t.id}, '${coupon.platform}')">Accept Trade</button>
-            `}
-          </div>
+        `).join('');
+    }
+
+    // Render Exchange Offers / Rates
+    const offers = [
+        { from: 'Amazon Pay', to: 'Swiggy', rate: 1.1, volume: 'High', color: '#FF9900' },
+        { from: 'Paytm', to: 'Amazon Pay', rate: 1.05, volume: 'Hot', color: '#00BAF2' },
+        { from: 'PhonePe', to: 'Zomato', rate: 0.95, volume: 'Stable', color: '#5F259F' },
+        { from: 'Cred', to: 'Amazon Pay', rate: 1.08, volume: 'Trending', color: '#00D09C' }
+    ];
+
+    offersContainer.innerHTML = offers.map(o => `
+        <div class="offer-row" style="background:var(--bg-card); border:1px solid var(--border); border-radius:15px; padding:15px; display:flex; align-items:center; justify-content:space-between">
+            <div style="display:flex; align-items:center; gap:20px; flex:1">
+                <div style="text-align:center">
+                    <p style="font-size:10px; color:var(--text-muted); margin-bottom:4px">FROM</p>
+                    <div style="background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:8px; color:white; font-size:13px; font-weight:600">${o.from}</div>
+                </div>
+                <div style="color:var(--purple-light)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 8 4 4-4 4M2 12h20M6 8l-4 4 4 4"/></svg>
+                </div>
+                <div style="text-align:center">
+                    <p style="font-size:10px; color:var(--text-muted); margin-bottom:4px">TO</p>
+                    <div style="background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:8px; color:white; font-size:13px; font-weight:600">${o.to}</div>
+                </div>
+            </div>
+            
+            <div style="text-align:center; padding: 0 30px">
+                <p style="font-size:10px; color:var(--text-muted); margin-bottom:4px">RATE</p>
+                <p style="color:var(--green); font-weight:700; font-size:16px; margin:0">1:${o.rate}</p>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:15px">
+                <span class="badge" style="background:rgba(255,255,255,0.03); color:var(--text-muted); font-size:10px">${o.volume}</span>
+                <button class="btn btn-primary btn-sm" onclick="initiateExchange('${o.from}', '${o.to}', ${o.rate})" 
+                        ${selectedExchangeRewardId ? '' : 'disabled style="opacity:0.5; cursor:not-allowed"'}>
+                    Exchange
+                </button>
+            </div>
         </div>
-      `;
-    }).join('');
-  } catch (e) {
-    container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--red)">Failed to load marketplace.</div>`;
-  }
+    `).join('');
 }
 
-function openTradeModal() {
-  const modal = document.getElementById('createTradeModal');
-  const select = document.getElementById('tradeCouponSelect');
-  if (!modal || !select) return;
-
-  // Filter active coupons from My Wallet
-  const activeCoupons = REWARDS_DATA.filter(c => c.status === 'active');
-  
-  select.innerHTML = '<option value="" disabled selected>Choose a coupon...</option>' + 
-    activeCoupons.map(c => `<option value="${c.id}">${c.platform} - ${c.value} (Exp: ${c.expiry})</option>`).join('');
-
-  modal.classList.add('open');
-  
-  document.getElementById('closeTradeModal').onclick = () => modal.classList.remove('open');
-  document.getElementById('createTradeForm').onsubmit = handleCreateTrade;
+function selectRewardForExchange(id) {
+    selectedExchangeRewardId = id;
+    renderExchangeTab();
 }
 
-async function handleCreateTrade(e) {
-  e.preventDefault();
-  const token = localStorage.getItem('auth_token');
-  const payload = {
-    offered_coupon_id: parseInt(document.getElementById('tradeCouponSelect').value),
-    requested_platform: document.getElementById('reqPlatform').value,
-    requested_value: document.getElementById('reqValue').value
-  };
+async function initiateExchange(from, to, rate) {
+    if (!selectedExchangeRewardId) return;
+    const reward = REWARDS_DATA.find(r => r.id == selectedExchangeRewardId);
+    if (!reward) return;
 
-  try {
-    const res = await fetch('http://localhost:8000/marketplace/create-trade', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(payload)
-    });
-    
-    if (res.ok) {
-      showToast('Trade listing created!', 'success');
-      document.getElementById('createTradeModal').classList.remove('open');
-      initMarketplace('available');
-      loadBackendData(); 
-    } else {
-      const err = await res.json();
-      showToast(err.detail || 'Failed to create trade', 'error');
+    if (confirm(`Confirm Exchange: Transfer your ₹${reward.value} ${reward.platform} Reward for ${to} credits at 1:${rate} rate?`)) {
+        showToast('Processing Exchange...', 'info');
+        await new Promise(r => setTimeout(r, 1500));
+        
+        reward.status = 'used'; // Mark old one as used
+        const newValue = Math.floor(reward.value * rate);
+        
+        // Add new reward
+        REWARDS_DATA.push({
+            id: Date.now(),
+            platform: to,
+            value: newValue,
+            code: 'EXCH-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
+            expiryDate: reward.expiryDate,
+            category: reward.category,
+            status: 'active',
+            source: 'marketplace'
+        });
+
+        // Add to history
+        if (!window.EXCHANGE_HISTORY) window.EXCHANGE_HISTORY = [];
+        window.EXCHANGE_HISTORY.push({
+            from: reward.platform,
+            to: to,
+            fromValue: reward.value,
+            toValue: newValue,
+            date: new Date().toLocaleDateString()
+        });
+
+        selectedExchangeRewardId = null;
+        showToast('coupon exchanged', 'success');
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        
+        renderAll();
+        initMarketplace('history');
     }
-  } catch (e) {
-    showToast('Network error', 'error');
-  }
 }
 
-async function acceptTradeFlow(tradeId, platform) {
-  if (!window.currentUser || window.currentUser.is_approved !== 1) {
-    showToast('Admin approval required to trade.', 'error');
-    return;
-  }
+function renderTrendingTab() {
+    const grid = document.getElementById('trendingGrid');
+    const gainers = document.getElementById('topGainers');
+    const traded = document.getElementById('mostTraded');
+    if (!grid) return;
 
-  const myCoupons = REWARDS_DATA.filter(c => c.status === 'active');
-  if (myCoupons.length === 0) {
-    showToast("You don't have any active coupons to trade!", "error");
-    return;
-  }
+    const trends = [
+        { pair: 'Paytm → Amazon', vol: '₹2.5M', change: '+12%', color: 'var(--green)' },
+        { pair: 'Cred → Swiggy', vol: '₹1.8M', change: '+8%', color: 'var(--green)' },
+        { pair: 'PhonePe → Flipkart', vol: '₹1.2M', change: '+15%', color: 'var(--green)' }
+    ];
 
-  const selection = prompt(`To accept trade for ${platform}, select your coupon ID to offer:\n` + 
-    myCoupons.map(c => `[ID:${c.id}] ${c.platform} ${c.value}`).join('\n'));
-    
-  if (!selection) return;
+    grid.innerHTML = trends.map((t, i) => `
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center">
+            <div style="display:flex; align-items:center; gap:12px">
+                <span style="font-weight:700; color:var(--text-muted)">#${i+1}</span>
+                <span style="font-weight:600; color:white">${t.pair}</span>
+            </div>
+            <div style="text-align:right">
+                <p style="margin:0; color:${t.color}; font-weight:700">${t.change}</p>
+                <p style="margin:0; font-size:11px; color:var(--text-muted)">Vol: ${t.vol}</p>
+            </div>
+        </div>
+    `).join('');
 
-  const token = localStorage.getItem('auth_token');
-  try {
-    const res = await fetch(`http://localhost:8000/marketplace/accept/${tradeId}?acceptor_coupon_id=${selection}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      showToast('Trade completed successfully!', 'success');
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#7C3AED', '#EC4899'] });
-      initMarketplace('available');
-      loadBackendData();
-    } else {
-      const err = await res.json();
-      showToast(err.detail || 'Trade failed', 'error');
+    gainers.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px">
+            <div style="display:flex; justify-content:space-between"><span>Amazon Pay</span> <span style="color:var(--green)">+15%</span></div>
+            <div style="display:flex; justify-content:space-between"><span>Flipkart</span> <span style="color:var(--green)">+12%</span></div>
+            <div style="display:flex; justify-content:space-between"><span>PhonePe</span> <span style="color:var(--green)">+8%</span></div>
+        </div>
+    `;
+
+    traded.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px">
+            <div style="display:flex; justify-content:space-between"><span>Paytm</span> <span style="color:var(--purple-light)">₹5.2M</span></div>
+            <div style="display:flex; justify-content:space-between"><span>Cred</span> <span style="color:var(--purple-light)">₹3.8M</span></div>
+            <div style="display:flex; justify-content:space-between"><span>Swiggy</span> <span style="color:var(--purple-light)">₹2.1M</span></div>
+        </div>
+    `;
+}
+
+function renderHistoryTab() {
+    const container = document.getElementById('exchangeHistory');
+    if (!container) return;
+
+    const history = window.EXCHANGE_HISTORY || [];
+
+    if (history.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted)">No exchange history found. Start trading to see records here.</div>`;
+        return;
     }
-  } catch (e) {
-    showToast('Network error', 'error');
-  }
+
+    container.innerHTML = history.reverse().map(h => `
+        <div style="background:rgba(16,185,129,0.03); border:1px solid rgba(16,185,129,0.2); border-radius:15px; padding:15px; display:flex; align-items:center; justify-content:space-between">
+            <div style="display:flex; align-items:center; gap:15px">
+                 <div style="width:36px; height:36px; border-radius:10px; background:rgba(16,185,129,0.2); display:flex; align-items:center; justify-content:center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                 </div>
+                 <div>
+                    <p style="margin:0; font-weight:600">${h.from} → ${h.to}</p>
+                    <p style="margin:0; font-size:11px; color:var(--text-muted)">${h.date} • Completed</p>
+                 </div>
+            </div>
+            <div style="text-align:right">
+                <p style="margin:0; font-weight:700">₹${h.fromValue} → ₹${h.toValue}</p>
+                <span class="badge" style="background:rgba(16,185,129,0.2); color:#34d399; font-size:10px">Success</span>
+            </div>
+        </div>
+    `).join('');
 }
 
-async function cancelTrade(id) {
-  const token = localStorage.getItem('auth_token');
-  try {
-    const res = await fetch(`http://localhost:8000/marketplace/cancel/${id}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      showToast('Trade cancelled.', 'info');
-      initMarketplace('my-trades');
-      loadBackendData();
-    }
-  } catch (e) {
-    showToast('Network error', 'error');
-  }
-}
 
 function initAnalytics() {
   // 1. Earning Chart
