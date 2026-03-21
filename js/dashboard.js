@@ -18,8 +18,11 @@ const COUPONS_DATA = [
 ];
 
 let REWARDS_DATA = [...COUPONS_DATA]; // Keeping name for compatibility
-let CONNECTIONS_DATA = [...MOCK_REWARDS];
-let TOTAL_BALANCE = MOCK_REWARDS.reduce((sum, r) => sum + (r.balance || 0), 0);
+let CONNECTIONS_DATA = [...COUPONS_DATA];
+let TOTAL_BALANCE = COUPONS_DATA.reduce((sum, r) => {
+    const val = parseInt((r.value || "0").replace(/[^\d]/g, "")) || 0;
+    return sum + val;
+}, 0);
 
 const ANALYTICS_CHART_DATA = [
   { month: 'Oct', value: 1200 },
@@ -282,6 +285,18 @@ if (sidebarToggle) {
 function handleHash() {
   const hash = window.location.hash.replace('#', '') || 'overview';
   navigateTo(hash);
+}
+
+// Ensure first page load works
+window.addEventListener('DOMContentLoaded', () => {
+    handleHash();
+});
+
+window.addEventListener('hashchange', handleHash);
+
+function initAdmin() {
+    console.log("Admin Panel initialized");
+    // Admin logic is handled in the admin tab rendering
 }
 window.addEventListener('hashchange', handleHash);
 
