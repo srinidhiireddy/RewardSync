@@ -322,8 +322,13 @@ function initOverview() {
             header.scrollIntoView({ behavior: 'smooth', block: 'start' });
             // Force expand if hidden
             const filtersContainer = document.getElementById('rewardFilters');
-            if (filtersContainer && filtersContainer.style.display === 'none') {
-                header.click(); 
+            const icon = document.getElementById('sectorToggleIcon');
+            if (filtersContainer && (filtersContainer.style.display === 'none' || filtersContainer.style.maxHeight === '0px')) {
+                filtersContainer.style.display = 'flex';
+                filtersContainer.style.maxHeight = '200px';
+                filtersContainer.style.marginBottom = '20px';
+                if (icon) icon.style.transform = 'rotate(180deg)';
+                renderRewardBreakdown('all'); // Ensure it's showing all categorized sectors
             }
         }
     };
