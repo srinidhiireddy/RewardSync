@@ -55,8 +55,11 @@ const MARKETPLACE_DATA = [
 
 const NOTIFICATIONS_DATA = [
   { type: 'urgent', icon: '⏰', logoUrl: 'assets/logos/cred.png', iconBg: 'rgba(239,68,68,0.15)', title: 'CRED Reward Expiring in 2 Days!', desc: 'You have ₹180 (360 coins) in CRED that will expire on March 3rd. Use it before it\'s gone!', time: 'Just now', action: 'Use Now', unread: true },
+  { type: 'unread', icon: '✅', logoUrl: 'assets/logos/amazon.png', iconBg: 'rgba(16,185,129,0.15)', title: 'Rescue Match Completed', desc: 'Successfully swapped your ₹200 Swiggy coupon for a ₹150 Amazon Gift Card!', time: '10 min ago', action: 'View Wallet', unread: true },
   { type: 'urgent', icon: '⚡', logoUrl: 'assets/logos/swiggy.png', iconBg: 'rgba(245,158,11,0.15)', title: 'Swiggy Coupon Expires in 4 Days', desc: '₹200 Swiggy reward expires on March 5th. Order food now to redeem it at max value.', time: '15 min ago', action: 'Order Now', unread: true },
   { type: 'unread', icon: '🤖', logoUrl: '', iconBg: 'rgba(124,58,237,0.15)', title: 'AI Tip: Best Redemption Combo Found', desc: 'Combine your Swiggy + CRED rewards for a total saving of ₹380 on your next food order tonight.', time: '1 hour ago', action: 'View Tip', unread: true },
+  { type: 'unread', icon: '🤝', logoUrl: '', iconBg: 'rgba(59,130,246,0.15)', title: 'New Trade Offer Received', desc: 'A user wants to trade their ₹100 Myntra coupon for your ₹150 Zomato coupon.', time: '2 hours ago', action: 'Review Offer', unread: false },
+  { type: 'unread', icon: '🎉', logoUrl: 'assets/logos/zomato.png', iconBg: 'rgba(236,72,153,0.15)', title: 'Reward Scanned Automatically', desc: 'You successfully added a ₹150 Zomato coupon via screenshot OCR upload.', time: '1 day ago', action: 'View Details', unread: false },
 ];
 
 const ACTIVITY_DATA = [
@@ -132,7 +135,7 @@ async function loadBackendData() {
         }
         
         const welcomeH1 = document.querySelector('#page-overview .page-title');
-        if (welcomeH1) welcomeH1.textContent = `Good morning, ${uName}! 👋`;
+        if (welcomeH1) welcomeH1.textContent = `Hi, ${uName}! 👋`;
 
         // Load Rewards
         loadUserRewards(user.uid);
@@ -166,7 +169,10 @@ async function loadUserRewards(uid) {
             REWARDS_DATA = REWARDS_DATA.length > 6 ? REWARDS_DATA : [...MOCK_REWARDS];
         }
         
-        TOTAL_BALANCE = REWARDS_DATA.reduce((sum, r) => sum + (r.balance || 0), 0);
+        // Only sum balances for active rewards
+        TOTAL_BALANCE = REWARDS_DATA
+            .filter(r => r.status === 'active')
+            .reduce((sum, r) => sum + (r.balance || 0), 0);
         
         const totalEl = document.getElementById('totalBalance');
         if (totalEl) animateCounter(totalEl, TOTAL_BALANCE, '₹');
@@ -619,17 +625,17 @@ function renderCouponCard(c, now) {
           <div class="platform-icon-wrap" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); border-radius:8px; margin-right:12px">
               ${getLogoHtml(c)}
           </div>
-          <div style="flex:1">
-            <div class="platform-name">${c.platform}</div>
+          <div style="flex:1; min-width:0">
+            <div class="platform-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${c.platform}</div>
             <div class="coupon-code-wrapper" style="display:flex; align-items:center; gap:6px; margin-top:4px">
-              <span style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:600">Code:</span>
-              <div class="coupon-code-label" onclick="copyToClipboard('${c.code}')" style="font-family:monospace; color:var(--purple-light); font-weight:700; font-size:14px; background:rgba(124,58,237,0.1); padding:2px 8px; border-radius:4px; cursor:pointer" title="Click to copy">
-                ${c.code}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px; opacity:0.6"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:600; flex-shrink:0">Code:</span>
+              <div class="coupon-code-label" onclick="copyToClipboard('${c.code}')" style="font-family:monospace; color:var(--purple-light); font-weight:700; font-size:14px; background:rgba(124,58,237,0.1); padding:2px 8px; border-radius:4px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; max-width:140px" title="Click to copy">
+                <span style="overflow:hidden; text-overflow:ellipsis">${c.code}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px; opacity:0.6; flex-shrink:0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               </div>
             </div>
           </div>
-          <div style="text-align:right">
+          <div style="text-align:right; flex-shrink:0">
             <div class="platform-amount" style="font-size:16px">${c.value}</div>
             <div class="status-badge ${statusClass}">${statusLabel}</div>
           </div>
@@ -1007,6 +1013,7 @@ async function sendTradeOffer() {
                 emoji: target.emoji || '🎁'
             },
             status: 'pending',
+            participants: [window.currentUser.uid, target.ownerUid],
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
@@ -1040,47 +1047,123 @@ async function renderOffersTab() {
     if (offersListener) offersListener();
 
     offersListener = db.collection('trade_offers')
+        .where('participants', 'array-contains', window.currentUser.uid)
         .onSnapshot((snapshot) => {
-            const docs = snapshot.docs
-                .map(d => ({ id: d.id, ...d.data() }))
+            const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // Note: If past data lacks participants array, we might miss them, but future ones are covered.
+            
+            const incoming = allDocs
                 .filter(o => o.status === 'pending' && o.listingOwnerUid === window.currentUser.uid)
                 .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                 
+            const completed = allDocs
+                .filter(o => o.status === 'accepted')
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+            const sent = allDocs
+                .filter(o => o.status === 'pending' && o.offererUid === window.currentUser.uid)
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                
             if (badge) {
-                badge.textContent = `${docs.length} Pending`;
-                badge.style.display = docs.length > 0 ? 'inline-block' : 'none';
+                badge.textContent = `${incoming.length} Pending`;
+                badge.style.display = incoming.length > 0 ? 'inline-block' : 'none';
             }
-
-            if (docs.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted)">No incoming trade offers at the moment.</div>`;
-                return;
+            
+            let html = '';
+            
+            if (incoming.length > 0) {
+                html += '<h4 style="margin-bottom:12px; color:var(--yellow)">Action Required</h4>';
+                html += incoming.map(offer => `
+                    <div class="content-card" style="padding:15px; border:1px solid rgba(245,158,11,0.3); margin-bottom:12px">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                            <span style="font-size:12px; color:var(--text-muted)">Offer from <strong style="color:white">${offer.offererName || 'User'}</strong></span>
+                            <span style="font-size:11px; color:var(--yellow)">Action Required</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px">
+                            <div style="flex:1; text-align:center">
+                                <div style="font-size:24px">${offer.offeredReward.emoji || '🎁'}</div>
+                                <div style="font-weight:700; font-size:12px">${offer.offeredReward.platform}</div>
+                                <div style="font-size:11px; color:var(--green)">${offer.offeredReward.value}</div>
+                            </div>
+                            <div style="color:var(--text-muted)">for your</div>
+                            <div style="flex:1; text-align:center">
+                                <div style="font-size:24px">${offer.targetReward.emoji || '🎁'}</div>
+                                <div style="font-weight:700; font-size:12px">${offer.targetReward.platform}</div>
+                                <div style="font-size:11px; color:var(--purple-light)">${offer.targetReward.value}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:15px">
+                            <button class="btn btn-ghost btn-sm" style="flex:1; border-color:var(--red); color:var(--red)" onclick="rejectTradeOffer('${offer.id}', '${offer.offererUid}', '${offer.offeredReward.id}')">Reject</button>
+                            <button class="btn btn-primary btn-sm" style="flex:1" onclick="acceptTradeOffer('${offer.id}')">Accept Swap</button>
+                        </div>
+                    </div>
+                `).join('');
             }
-
-            container.innerHTML = docs.map(offer => `
-                <div class="content-card" style="padding:15px; border:1px solid rgba(245,158,11,0.3)">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-                        <span style="font-size:12px; color:var(--text-muted)">Offer from <strong style="color:white">${offer.offererName}</strong></span>
-                        <span style="font-size:11px; color:var(--yellow)">Pending</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px">
-                        <div style="flex:1; text-align:center">
-                            <div style="font-size:24px">${offer.offeredReward.emoji || '🎁'}</div>
-                            <div style="font-weight:700; font-size:12px">${offer.offeredReward.platform}</div>
-                            <div style="font-size:11px; color:var(--green)">${offer.offeredReward.value}</div>
+            
+            if (sent.length > 0) {
+                html += '<h4 style="margin-bottom:12px; margin-top:20px; color:var(--purple-light)">Sent Offers (Pending)</h4>';
+                html += sent.map(offer => `
+                    <div class="content-card" style="padding:15px; border:1px dashed var(--border); margin-bottom:12px; opacity:0.8; background:rgba(124,58,237,0.02)">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                            <span style="font-size:12px; color:var(--text-muted)">Sent to <strong style="color:white">Marketplace</strong></span>
+                            <span style="font-size:11px; color:var(--purple-light)">Awaiting Reply...</span>
                         </div>
-                        <div style="color:var(--text-muted)">for your</div>
-                        <div style="flex:1; text-align:center">
-                            <div style="font-size:24px">${offer.targetReward.emoji || '🎁'}</div>
-                            <div style="font-weight:700; font-size:12px">${offer.targetReward.platform}</div>
-                            <div style="font-size:11px; color:var(--purple-light)">${offer.targetReward.value}</div>
+                        <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px">
+                            <div style="flex:1; text-align:center">
+                                <div style="font-size:24px">${offer.offeredReward.emoji || '🎁'}</div>
+                                <div style="font-weight:700; font-size:12px">${offer.offeredReward.platform}</div>
+                                <div style="font-size:11px; color:var(--green)">${offer.offeredReward.value}</div>
+                            </div>
+                            <div style="color:var(--text-muted)">for</div>
+                            <div style="flex:1; text-align:center">
+                                <div style="font-size:24px">${offer.targetReward.emoji || '🎁'}</div>
+                                <div style="font-weight:700; font-size:12px">${offer.targetReward.platform}</div>
+                                <div style="font-size:11px; color:var(--purple-light)">${offer.targetReward.value}</div>
+                            </div>
                         </div>
                     </div>
-                    <div style="display:flex; gap:10px; margin-top:15px">
-                        <button class="btn btn-ghost btn-sm" style="flex:1; border-color:var(--red); color:var(--red)" onclick="rejectTradeOffer('${offer.id}', '${offer.offererUid}', '${offer.offeredReward.id}')">Reject</button>
-                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="acceptTradeOffer('${offer.id}')">Accept Swap</button>
+                `).join('');
+            }
+            
+            if (completed.length > 0) {
+                html += '<h4 style="margin-bottom:12px; margin-top:20px; color:var(--green)">Completed Trades</h4>';
+                html += completed.map(offer => {
+                    const iWasSender = offer.offererUid === window.currentUser.uid;
+                    const receivedInfo = iWasSender ? offer.targetReward : offer.offeredReward;
+                    const givenInfo = iWasSender ? offer.offeredReward : offer.targetReward;
+                    
+                    return `
+                    <div class="content-card" style="padding:15px; border:1px solid rgba(16,185,129,0.3); margin-bottom:12px; background:rgba(16,185,129,0.03)">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                            <span style="font-size:12px; color:var(--text-muted)">Traded with <strong style="color:white">${iWasSender ? 'Marketplace' : (offer.offererName || 'User')}</strong></span>
+                            <span style="font-size:11px; color:var(--green)">✓ Completed</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px">
+                            <div style="flex:1; text-align:center">
+                                <div style="font-size:10px; color:var(--red); font-weight:700; margin-bottom:4px">GAVE</div>
+                                <div style="font-size:20px">${givenInfo.emoji || '🎁'}</div>
+                                <div style="font-weight:700; font-size:12px">${givenInfo.platform}</div>
+                                <div style="font-size:11px; color:var(--text-muted)">${givenInfo.value}</div>
+                            </div>
+                            <div style="color:var(--green); font-size:20px">➔</div>
+                            <div style="flex:1; text-align:center">
+                                <div style="font-size:10px; color:var(--green); font-weight:700; margin-bottom:4px">RECEIVED</div>
+                                <div style="font-size:20px">${receivedInfo.emoji || '🎁'}</div>
+                                <div style="font-weight:700; font-size:12px">${receivedInfo.platform}</div>
+                                <div style="font-size:11px; color:var(--green)">${receivedInfo.value}</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                    `;
+                }).join('');
+            }
+            
+            if (html === '') {
+                 container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted)">No trade offers found.</div>`;
+            } else {
+                 container.innerHTML = html;
+            }
         });
 }
 
@@ -1113,14 +1196,20 @@ async function acceptTradeOffer(offerId) {
         const amt = parseInt(amtStr) || 0;
         await addRewardToLocal(amt, offerData.offeredReward.platform, offerData.offeredReward.code, offerData.offeredReward.category || 'Other', offerData.offeredReward.expiryDate || 'N/A');
         
-        // 3. Mark my old reward as 'traded'
+        // 3. Mark my old reward as 'used' (traded away)
         const myRewardsRef = db.collection('users').doc(window.currentUser.uid).collection('rewards');
         if (offerData.targetReward.id) {
             await myRewardsRef.doc(offerData.targetReward.id).update({ status: 'used' });
         }
         
-        // 4. Give my old reward to THEIR wallet
+        // 3b. Mark their offered reward as 'used' (given to me)
         const theirRewardsRef = db.collection('users').doc(offerData.offererUid).collection('rewards');
+        if (offerData.offeredReward.id) {
+            // It was previously 'in_trade'
+            await theirRewardsRef.doc(offerData.offeredReward.id).update({ status: 'used' });
+        }
+        
+        // 4. Give my old reward to THEIR wallet
         const amtStr2 = String(offerData.targetReward.value).replace(/[^\\d]/g, '');
         await theirRewardsRef.add({
             platform: offerData.targetReward.platform,
