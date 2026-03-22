@@ -110,6 +110,21 @@
 
         </div>
       </div>
+      
+      <!-- Desktop Notification Permission Banner -->
+      <div id="notificationPermissionBanner" style="display:none; background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3); border-radius:16px; padding:15px; margin-bottom:24px; animation: slideDown 0.5s ease; align-items:center; justify-content:space-between; gap:16px">
+        <div style="display:flex; align-items:center; gap:12px">
+            <div style="font-size:24px">🔔</div>
+            <div style="flex:1">
+                <p style="font-weight:700; font-size:14px; margin:0">Enable Desktop Alerts</p>
+                <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0">Stay updated on new rewards and important alerts in real-time.</p>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px">
+            <button class="btn btn-ghost btn-sm" id="ignoreNotificationsBtn">Maybe Later</button>
+            <button class="btn btn-primary btn-sm" id="enableNotificationsBtn">Enable Alerts</button>
+        </div>
+      </div>
 
       <!-- Wallet Summary Cards -->
       <div class="summary-grid">
@@ -803,6 +818,20 @@
   </div>
 
   <!-- Toast -->
+  
+  <!-- In-App Notification Popup Modal -->
+  <div class="modal-overlay" id="notificationPopupModal" style="z-index: 9999">
+    <div class="modal" style="max-width:400px; transform:translateY(-100px); opacity:0; transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)">
+      <div class="modal-body" style="padding:30px; text-align:center">
+        <div id="notifPopupIcon" style="font-size:48px; margin-bottom:20px; animation: bounce 2s infinite">🔔</div>
+        <h3 id="notifPopupTitle" style="margin-bottom:12px; font-size:20px">New Alert!</h3>
+        <p id="notifPopupBody" style="font-size:14px; color:var(--text-secondary); line-height:1.6; margin-bottom:24px">
+            You have a new notification from RewardSync.
+        </p>
+        <button class="btn btn-primary btn-full" id="closeNotifPopup">Awesome!</button>
+      </div>
+    </div>
+  </div>
   <div class="toast-container" id="toastContainer"></div>
 
 

@@ -1654,3 +1654,25 @@ textarea.input-field.no-icon {
   border-radius: 50%;
   animation: spinner-ring 0.8s linear infinite;
 }
+
+/* Notification Animations & Styles */
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+}
+
+#notificationPermissionBanner {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+#notificationPopupModal .modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}

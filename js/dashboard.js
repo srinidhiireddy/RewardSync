@@ -195,6 +195,117 @@ async function fetchPendingCount() {
 }
 
 // ============================================
+// ============================================
+// NOTIFICATIONS & MESSAGING
+// ============================================
+
+async function requestNotificationPermission() {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('Notification permission granted.');
+            const token = await messaging.getToken({
+                vapidKey: 'BIsPPr6p-Jv5XWfO-Y8J2N4u-K9L8Zq1Uv2_S8V0N1W3S4L5M6N7O8P9Q0R' // Mock or replace with your actual key
+            });
+            if (token) {
+                console.log('FCM Token:', token);
+                saveMessagingToken(token);
+                hideNotificationBanner();
+                showToast('Notifications enabled successfully!', 'success');
+            }
+        } else {
+            console.warn('Notification permission denied.');
+        }
+    } catch (error) {
+        console.error('Error requesting notification permission:', error);
+    }
+}
+
+function saveMessagingToken(token) {
+    if (window.currentUser && window.currentUser.uid) {
+        db.collection('users').doc(window.currentUser.uid).update({
+            fcmToken: token,
+            notificationsEnabled: true
+        });
+    }
+}
+
+function setupMessagingListeners() {
+    if (!messaging) return;
+
+    // Handle foreground messages
+    messaging.onMessage((payload) => {
+        console.log('Foreground message received:', payload);
+        const { title, body, icon } = payload.notification;
+        showNotificationPopup(title, body, icon || '🔔');
+    });
+
+    // Check current permission to show/hide banner
+    if (Notification.permission === 'default') {
+        showNotificationBanner();
+    }
+}
+
+function showNotificationBanner() {
+    const banner = document.getElementById('notificationPermissionBanner');
+    if (banner) banner.style.display = 'flex';
+}
+
+function hideNotificationBanner() {
+    const banner = document.getElementById('notificationPermissionBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+function showNotificationPopup(title, body, icon = '🔔') {
+    const modal = document.getElementById('notificationPopupModal');
+    const innerModal = modal.querySelector('.modal');
+    const iconEl = document.getElementById('notifPopupIcon');
+    const titleEl = document.getElementById('notifPopupTitle');
+    const bodyEl = document.getElementById('notifPopupBody');
+
+    if (!modal || !titleEl || !bodyEl) return;
+
+    iconEl.textContent = icon;
+    titleEl.textContent = title;
+    bodyEl.textContent = body;
+
+    modal.classList.add('open');
+    // Animate in
+    setTimeout(() => {
+        innerModal.style.transform = 'translateY(0)';
+        innerModal.style.opacity = '1';
+    }, 10);
+
+    // Audio cue
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(e => console.log('Audio autoplay blocked'));
+
+    document.getElementById('closeNotifPopup').onclick = () => hideNotificationPopup();
+}
+
+function hideNotificationPopup() {
+    const modal = document.getElementById('notificationPopupModal');
+    const innerModal = modal.querySelector('.modal');
+    if (!modal) return;
+
+    innerModal.style.transform = 'translateY(-100px)';
+    innerModal.style.opacity = '0';
+    setTimeout(() => {
+        modal.classList.remove('open');
+    }, 400);
+}
+
+// Wire up Banner Buttons
+window.addEventListener('DOMContentLoaded', () => {
+    const enableBtn = document.getElementById('enableNotificationsBtn');
+    const ignoreBtn = document.getElementById('ignoreNotificationsBtn');
+    
+    if (enableBtn) enableBtn.onclick = requestNotificationPermission;
+    if (ignoreBtn) ignoreBtn.onclick = hideNotificationBanner;
+
+    setupMessagingListeners();
+});
+
 // UTILITIES
 // ============================================
 function showToast(message, type = 'info') {
@@ -593,8 +704,6 @@ async function renderP2PMarketplace() {
     if (marketplaceListener) marketplaceListener();
 
     marketplaceListener = db.collection('marketplace')
-        .where('status', '==', 'available')
-        .orderBy('createdAt', 'desc')
         .onSnapshot((snapshot) => {
             if (snapshot.empty) {
                 container.innerHTML = `
@@ -603,12 +712,31 @@ async function renderP2PMarketplace() {
                         <p style="font-weight:600; color:white">Marketplace is empty</p>
                         <p style="font-size:13px; margin-top:8px">Be the first to post a reward from your wallet!</p>
                     </div>`;
+                const activeDealsEl = document.getElementById('activeDealsCount');
+                if (activeDealsEl) activeDealsEl.textContent = '0';
                 return;
             }
 
-            container.innerHTML = snapshot.docs.map(doc => {
-                const item = doc.data();
-                const lid = doc.id;
+            // Filter and Sort in memory to avoid Firestore Index requirement
+            const docs = snapshot.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .filter(item => item.status === 'available')
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+            if (docs.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align:center; padding:60px; color:var(--text-muted)">
+                        <div style="font-size:48px; margin-bottom:15px">🏜️</div>
+                        <p style="font-weight:600; color:white">Marketplace is empty</p>
+                        <p style="font-size:13px; margin-top:8px">No available rewards at the moment.</p>
+                    </div>`;
+                const activeDealsEl = document.getElementById('activeDealsCount');
+                if (activeDealsEl) activeDealsEl.textContent = '0';
+                return;
+            }
+
+            container.innerHTML = docs.map(item => {
+                const lid = item.id;
                 const isMine = window.currentUser && item.ownerUid === window.currentUser.uid;
                 
                 return `
@@ -621,28 +749,28 @@ async function renderP2PMarketplace() {
                                         ${getLogoHtml(item)}
                                     </div>
                                     <div>
-                                        <h4 style="margin:0; font-size:15px">${item.platform}</h4>
-                                        <div style="font-size:11px; color:var(--text-muted)">Posted by ${item.ownerName.split(' ')[0]}</div>
+                                        <h4 style="margin:0; font-size:15px">${item.platform || 'Reward'}</h4>
+                                        <div style="font-size:11px; color:var(--text-muted)">Posted by ${item.ownerName ? item.ownerName.split(' ')[0] : 'User'}</div>
                                     </div>
                                 </div>
                                 <div style="text-align:right">
-                                    <div style="font-size:18px; font-weight:800; color:var(--green)">${item.value}</div>
+                                    <div style="font-size:18px; font-weight:800; color:var(--green)">${item.value || '₹0'}</div>
                                     <div style="font-size:10px; color:var(--text-muted)">Value</div>
                                 </div>
                             </div>
                             
                             <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:10px; margin-bottom:15px; border:1px dashed var(--border)">
                                 <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">Asking:</div>
-                                <div style="font-size:13px; font-weight:500; color:var(--purple-light)">${item.askingMsg || 'Open for offers'}</div>
+                                <div style="font-size:13px; font-weight:500; color:var(--purple-light)">${item.askingMsg || item.message || 'Open for offers'}</div>
                             </div>
 
                             <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:20px">
-                                <span style="color:var(--text-muted)">Expires ${item.expiryDate}</span>
+                                <span style="color:var(--text-muted)">Expires ${item.expiryDate || 'N/A'}</span>
                                 <span class="badge" style="background:rgba(16,185,129,0.1); color:var(--green)">Verified</span>
                             </div>
 
                             <button class="btn ${isMine ? 'btn-ghost' : 'btn-primary'} btn-full" 
-                                    onclick="${isMine ? `removeListing('${lid}')` : `openClaimModal('${lid}')`}" 
+                                    onclick="${isMine ? `removeListing('${lid}', '${item.rewardId || item.id}')` : `openClaimModal('${lid}')`}" 
                                     style="font-size:13px">
                                 ${isMine ? 'Remove Listing' : '🤝 Exchange Now'}
                             </button>
@@ -650,6 +778,16 @@ async function renderP2PMarketplace() {
                     </div>
                 `;
             }).join('');
+            
+            const activeDealsEl = document.getElementById('activeDealsCount');
+            if (activeDealsEl) activeDealsEl.textContent = docs.length;
+        }, (error) => {
+            console.error("Marketplace Error:", error);
+            container.innerHTML = `
+                <div style="grid-column: 1/-1; text-align:center; padding:60px; color:var(--red)">
+                    <p style="font-weight:600">Error loading marketplace</p>
+                    <p style="font-size:12px; margin-top:8px">${error.message}</p>
+                </div>`;
         });
 }
 
