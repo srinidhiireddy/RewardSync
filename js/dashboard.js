@@ -688,6 +688,8 @@ function initMarketplace(activeTab = 'exchange') {
     // 4. Tab Specific Logic
     if (activeTab === 'exchange') {
         renderP2PMarketplace();
+    } else if (activeTab === 'offers') {
+        renderOffersTab();
     } else if (activeTab === 'trending') {
         renderTrendingTab();
     } else if (activeTab === 'history') {
@@ -845,6 +847,7 @@ async function executePostToMarket() {
         ownerName: window.currentUser.name || 'User',
         askingMsg: asking,
         status: 'available',
+        rewardId: selectedRewardToPost.id,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -940,7 +943,7 @@ async function openClaimModal(lid) {
         // Wire close
         document.getElementById('closeClaimModal').onclick = () => modal.classList.remove('open');
         document.getElementById('cancelClaim').onclick = () => modal.classList.remove('open');
-        document.getElementById('confirmClaimBtn').onclick = executeExchange;
+        document.getElementById('confirmClaimBtn').onclick = sendTradeOffer;
 
     } catch (e) { console.error(e); }
 }
@@ -960,7 +963,7 @@ function selectOfferReward(rid) {
     const offer = REWARDS_DATA.find(r => r.id === rid);
     document.getElementById('claimOfferPreview').innerHTML = `
         <div style="text-align:center">
-            <div style="font-size:24px; margin-bottom:4px">${offer.emoji}</div>
+            <div style="font-size:24px; margin-bottom:4px">${offer.emoji || '🎁'}</div>
             <div style="font-weight:700; font-size:13px">${offer.platform}</div>
             <div style="font-size:11px; color:var(--purple-light)">${offer.value}</div>
         </div>
@@ -969,42 +972,196 @@ function selectOfferReward(rid) {
 }
 window.selectOfferReward = selectOfferReward;
 
-async function executeExchange() {
+async function sendTradeOffer() {
     if (!targetListingDoc || !selectedRewardToOfferId) return;
     const btn = document.getElementById('confirmClaimBtn');
     btn.disabled = true;
-    btn.textContent = 'Negotiating...';
+    btn.textContent = 'Sending Offer...';
 
     try {
         const target = targetListingDoc.data();
+        const lid = targetListingDoc.id;
         const offer = REWARDS_DATA.find(r => r.id === selectedRewardToOfferId);
         
-        // 1. Give my reward to them (or just consume it for now in this demo logic)
-        // In a real P2P, we'd add to Their collection. Here we simulate the logic.
+        const tradeOffer = {
+            listingId: lid,
+            listingOwnerUid: target.ownerUid,
+            offererUid: window.currentUser.uid,
+            offererName: window.currentUser.name || window.currentUser.email || 'User',
+            offeredReward: {
+                id: offer.id,
+                platform: offer.platform,
+                value: offer.value,
+                code: offer.code,
+                category: offer.category,
+                expiryDate: offer.expiryDate,
+                emoji: offer.emoji || '🎁'
+            },
+            targetReward: {
+                id: target.rewardId || lid,
+                platform: target.platform,
+                value: target.value,
+                code: target.code,
+                category: target.category,
+                expiryDate: target.expiryDate,
+                emoji: target.emoji || '🎁'
+            },
+            status: 'pending',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection('trade_offers').add(tradeOffer);
         
-        // 2. Add Their reward to My collection
-        await addRewardToLocal(parseInt(target.value.replace(/[^\d]/g, '')), target.platform, target.code, target.category, target.expiryDate);
-        
-        // 3. Mark my offer reward as Used
         await db.collection('users').doc(window.currentUser.uid).collection('rewards').doc(offer.id).update({
-            status: 'used'
+            status: 'in_trade'
         });
 
-        // 4. Mark marketplace item as Exchanged
-        await db.collection('marketplace').doc(targetListingDoc.id).delete();
-
-        showToast('Exchange Successful! Check your wallet.', 'success');
+        showToast('Trade Offer Sent!', 'success');
         document.getElementById('claimExchangeModal').classList.remove('open');
+        initMarketplace('exchange');
+        loadUserRewards(window.currentUser.uid);
+    } catch (e) {
+        console.error("Offer send fail:", e);
+        showToast("Offer sending failed: " + e.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Offer';
+    }
+}
+window.sendTradeOffer = sendTradeOffer;
+
+let offersListener = null;
+
+async function renderOffersTab() {
+    const container = document.getElementById('offersContainer');
+    const badge = document.getElementById('pendingOffersBadge');
+    if (!container || !window.currentUser) return;
+
+    if (offersListener) offersListener();
+
+    offersListener = db.collection('trade_offers')
+        .onSnapshot((snapshot) => {
+            const docs = snapshot.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .filter(o => o.status === 'pending' && o.listingOwnerUid === window.currentUser.uid)
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                
+            if (badge) {
+                badge.textContent = `${docs.length} Pending`;
+                badge.style.display = docs.length > 0 ? 'inline-block' : 'none';
+            }
+
+            if (docs.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted)">No incoming trade offers at the moment.</div>`;
+                return;
+            }
+
+            container.innerHTML = docs.map(offer => `
+                <div class="content-card" style="padding:15px; border:1px solid rgba(245,158,11,0.3)">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                        <span style="font-size:12px; color:var(--text-muted)">Offer from <strong style="color:white">${offer.offererName}</strong></span>
+                        <span style="font-size:11px; color:var(--yellow)">Pending</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px">
+                        <div style="flex:1; text-align:center">
+                            <div style="font-size:24px">${offer.offeredReward.emoji || '🎁'}</div>
+                            <div style="font-weight:700; font-size:12px">${offer.offeredReward.platform}</div>
+                            <div style="font-size:11px; color:var(--green)">${offer.offeredReward.value}</div>
+                        </div>
+                        <div style="color:var(--text-muted)">for your</div>
+                        <div style="flex:1; text-align:center">
+                            <div style="font-size:24px">${offer.targetReward.emoji || '🎁'}</div>
+                            <div style="font-weight:700; font-size:12px">${offer.targetReward.platform}</div>
+                            <div style="font-size:11px; color:var(--purple-light)">${offer.targetReward.value}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:15px">
+                        <button class="btn btn-ghost btn-sm" style="flex:1; border-color:var(--red); color:var(--red)" onclick="rejectTradeOffer('${offer.id}', '${offer.offererUid}', '${offer.offeredReward.id}')">Reject</button>
+                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="acceptTradeOffer('${offer.id}')">Accept Swap</button>
+                    </div>
+                </div>
+            `).join('');
+        });
+}
+
+async function rejectTradeOffer(offerId, offererUid, offeredRewardId) {
+    if (!confirm('Reject this offer?')) return;
+    try {
+        await db.collection('trade_offers').doc(offerId).update({ status: 'rejected' });
+        // Return offered item to active state for offerer
+        await db.collection('users').doc(offererUid).collection('rewards').doc(offeredRewardId).update({ status: 'active' });
+        showToast('Offer rejected', 'info');
+    } catch (e) {
+        console.error(e);
+        showToast('Failed to reject', 'error');
+    }
+}
+window.rejectTradeOffer = rejectTradeOffer;
+
+async function acceptTradeOffer(offerId) {
+    if (!confirm('Accept this offer and complete the swap?')) return;
+    try {
+        const offerDoc = await db.collection('trade_offers').doc(offerId).get();
+        if(!offerDoc.exists) return;
+        const offerData = offerDoc.data();
+        
+        // 1. Mark trade offer as accepted
+        await db.collection('trade_offers').doc(offerId).update({ status: 'accepted' });
+        
+        // 2. Add offered reward to MY wallet
+        const amtStr = String(offerData.offeredReward.value).replace(/[^\\d]/g, '');
+        const amt = parseInt(amtStr) || 0;
+        await addRewardToLocal(amt, offerData.offeredReward.platform, offerData.offeredReward.code, offerData.offeredReward.category || 'Other', offerData.offeredReward.expiryDate || 'N/A');
+        
+        // 3. Mark my old reward as 'traded'
+        const myRewardsRef = db.collection('users').doc(window.currentUser.uid).collection('rewards');
+        if (offerData.targetReward.id) {
+            await myRewardsRef.doc(offerData.targetReward.id).update({ status: 'used' });
+        }
+        
+        // 4. Give my old reward to THEIR wallet
+        const theirRewardsRef = db.collection('users').doc(offerData.offererUid).collection('rewards');
+        const amtStr2 = String(offerData.targetReward.value).replace(/[^\\d]/g, '');
+        await theirRewardsRef.add({
+            platform: offerData.targetReward.platform,
+            code: offerData.targetReward.code,
+            value: offerData.targetReward.value,
+            balance: parseInt(amtStr2) || 0,
+            category: offerData.targetReward.category || 'Other',
+            expiryDate: offerData.targetReward.expiryDate || 'N/A',
+            emoji: offerData.targetReward.emoji || '🎁',
+            status: 'active',
+            source: 'marketplace_trade',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 5. Delete marketplace listing
+        await db.collection('marketplace').doc(offerData.listingId).delete();
+        
+        // Reject all other pending offers for this listing
+        const otherOffers = await db.collection('trade_offers')
+            .where('listingId', '==', offerData.listingId)
+            .get(); // Since we want to update the ones pending without index
+        
+        const batch = db.batch();
+        otherOffers.docs.forEach(d => {
+            const oData = d.data();
+            if (d.id !== offerId && oData.status === 'pending') {
+                batch.update(d.ref, { status: 'rejected_auto' });
+                db.collection('users').doc(oData.offererUid).collection('rewards').doc(oData.offeredReward.id).update({ status: 'active' });
+            }
+        });
+        await batch.commit();
+
+        showToast('Trade completed successfully!', 'success');
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         loadUserRewards(window.currentUser.uid);
     } catch (e) {
-        console.error("Exchange fail:", e);
-        showToast("Exchange failed: " + e.message, "error");
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Confirm Swap';
+         console.error(e);
+         showToast(e.message, 'error');
     }
 }
+window.acceptTradeOffer = acceptTradeOffer;
 
 function selectRewardForExchange(id) {
     selectedExchangeRewardId = id;

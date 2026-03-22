@@ -303,6 +303,7 @@
       <!-- NEW: PREMIUM TABS -->
       <div class="mp-tabs">
         <button class="mp-tab active" data-tab="exchange">Exchange</button>
+        <button class="mp-tab" data-tab="offers">Offers</button>
         <button class="mp-tab" data-tab="trending">Trending</button>
         <button class="mp-tab" data-tab="history">History</button>
       </div>
@@ -329,6 +330,20 @@
         </div>
         <div id="exchangeOffers" style="display:flex; flex-direction:column; gap:12px">
            <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- OFFERS TAB CONTENT -->
+      <div id="tab-offers" class="mp-tab-content" style="display:none">
+        <div class="content-card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center">
+            <h3>Incoming Trade Offers</h3>
+            <span class="badge" id="pendingOffersBadge" style="background:var(--yellow); color:black; display:none">0 Pending</span>
+          </div>
+          <div id="offersContainer" style="padding:15px; display:flex; flex-direction:column; gap:12px">
+             <!-- Populated by JS -->
+             <div style="text-align:center; padding:40px; color:var(--text-muted)">No trade offers received yet.</div>
+          </div>
         </div>
       </div>
 
@@ -811,7 +826,7 @@
 
         <div style="display:flex; gap:10px">
           <button class="btn btn-ghost" id="cancelClaim" style="flex:1">Cancel</button>
-          <button class="btn btn-primary" id="confirmClaimBtn" style="flex:2" disabled>Confirm Swap</button>
+          <button class="btn btn-primary" id="confirmClaimBtn" style="flex:2" disabled>Send Offer</button>
         </div>
       </div>
     </div>
