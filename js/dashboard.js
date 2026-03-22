@@ -8,21 +8,18 @@
 // DATA (Coupons System)
 // ============================================
 const COUPONS_DATA = [
-  { id: 'c1', platform: 'Amazon', code: 'SAVE200', value: '₹200 OFF', category: 'Shopping', logoUrl: 'assets/logos/amazon.png', emoji: '🛒', status: 'active', expiryDate: '2026-04-12', createdAt: Date.now() },
-  { id: 'c2', platform: 'Swiggy', code: 'SWIGGYIT', value: '₹100 OFF', category: 'Food', logoUrl: 'assets/logos/swiggy.png', emoji: '🍔', status: 'available', expiryDate: '2026-03-25', createdAt: Date.now() },
-  { id: 'c3', platform: 'Zomato', code: 'ZOMATO50', value: '50% OFF', category: 'Food', logoUrl: 'assets/logos/zomato.png', emoji: '🍕', status: 'active', expiryDate: '2026-03-10', createdAt: Date.now() },
-  { id: 'c4', platform: 'Uber', code: 'UBER150', value: '₹150 OFF', category: 'Travel', logoUrl: 'assets/logos/mmt.png', emoji: '🚕', status: 'available', expiryDate: '2026-04-01', createdAt: Date.now() },
-  { id: 'c5', platform: 'Flipkart', code: 'PLUSVIP', value: 'Flat ₹150 OFF', category: 'Shopping', logoUrl: '', emoji: '🔶', status: 'used', expiryDate: '2026-02-15', createdAt: Date.now() },
-  { id: 'c6', platform: 'BookMyShow', code: 'BMS200', value: '₹200 Discount', category: 'Entertainment', logoUrl: '', emoji: '🎬', status: 'active', expiryDate: '2026-03-28', createdAt: Date.now() },
-  { id: 'c7', platform: 'Netflix', code: 'NTFLX6M', value: '6 Months Free', category: 'Entertainment', logoUrl: '', emoji: '📺', status: 'available', expiryDate: '2026-08-15', createdAt: Date.now() },
+  { id: 'c1', platform: 'Amazon', code: 'SAVE200', value: '₹200 OFF', balance: 200, category: 'Shopping', logoUrl: 'assets/logos/amazon.png', emoji: '🛒', status: 'active', expiryDate: '2026-04-12', createdAt: Date.now() },
+  { id: 'c2', platform: 'Swiggy', code: 'SWIGGYIT', value: '₹100 OFF', balance: 100, category: 'Food', logoUrl: 'assets/logos/swiggy.png', emoji: '🍔', status: 'available', expiryDate: '2026-03-25', createdAt: Date.now() },
+  { id: 'c3', platform: 'Zomato', code: 'ZOMATO50', value: '₹150 OFF', balance: 150, category: 'Food', logoUrl: 'assets/logos/zomato.png', emoji: '🍕', status: 'active', expiryDate: '2026-03-10', createdAt: Date.now() },
+  { id: 'c4', platform: 'Uber', code: 'UBER150', value: '₹150 OFF', balance: 150, category: 'Travel', logoUrl: 'assets/logos/mmt.png', emoji: '🚕', status: 'available', expiryDate: '2026-04-01', createdAt: Date.now() },
+  { id: 'c5', platform: 'Flipkart', code: 'PLUSVIP', value: 'Flat ₹150 OFF', balance: 150, category: 'Shopping', logoUrl: '', emoji: '🔶', status: 'used', expiryDate: '2026-02-15', createdAt: Date.now() },
+  { id: 'c6', platform: 'BookMyShow', code: 'BMS200', value: '₹200 Discount', balance: 200, category: 'Entertainment', logoUrl: '', emoji: '🎬', status: 'active', expiryDate: '2026-03-28', createdAt: Date.now() },
+  { id: 'c7', platform: 'Netflix', code: 'NTFLX6M', value: '₹400 Value', balance: 400, category: 'Entertainment', logoUrl: '', emoji: '📺', status: 'available', expiryDate: '2026-08-15', createdAt: Date.now() },
 ];
 
 let REWARDS_DATA = [...COUPONS_DATA]; // Keeping name for compatibility
 let CONNECTIONS_DATA = [...COUPONS_DATA];
-let TOTAL_BALANCE = COUPONS_DATA.reduce((sum, r) => {
-    const val = parseInt((r.value || "0").replace(/[^\d]/g, "")) || 0;
-    return sum + val;
-}, 0);
+let TOTAL_BALANCE = COUPONS_DATA.reduce((sum, r) => sum + (r.balance || 0), 0);
 
 const ANALYTICS_CHART_DATA = [
   { month: 'Oct', value: 1200 },
@@ -72,6 +69,15 @@ const AI_SUGGESTIONS = [
   { icon: '🔥', title: 'Use Today — Max Value', desc: 'Combine Swiggy + CRED rewards for your dinner order tonight. Save ₹380 before expiry hits.', reward: 'Potential saving: ₹380' },
   { icon: '💡', title: 'Convert HDFC Points Now', desc: 'Your 1114 HDFC points are worth ₹557 but earn 5% more as Amazon Gift Cards this month.', reward: 'Bonus: +₹28' },
 ];
+
+// Helper: Copy to clipboard
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Code copied to clipboard!', 'success');
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+  });
+}
 
 // ============================================
 // FIREBASE INTEGRATION
@@ -295,10 +301,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('hashchange', handleHash);
 
-function initAdmin() {
-    console.log("Admin Panel initialized");
-    // Admin logic is handled in the admin tab rendering
-}
 window.addEventListener('hashchange', handleHash);
 
 // ============================================
@@ -344,22 +346,11 @@ function setupRewardFilters() {
   const filtersContainer = document.getElementById('rewardFilters');
   const icon = document.getElementById('sectorToggleIcon');
   
-  if (header && filtersContainer) {
+  if (header) {
     header.onclick = (e) => {
       if (e.target.id === 'viewAllRewards') return;
-      
-      const isHidden = filtersContainer.style.display === 'none';
-      if (isHidden) {
-        filtersContainer.style.display = 'flex';
-        filtersContainer.style.maxHeight = '200px';
-        filtersContainer.style.marginBottom = '20px';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-      } else {
-        filtersContainer.style.display = 'none';
-        filtersContainer.style.maxHeight = '0';
-        filtersContainer.style.marginBottom = '0';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-      }
+      navigateTo('categories');
+      showToast('Opening Sectors...', 'info');
     };
   }
 
@@ -519,16 +510,25 @@ function renderCouponCard(c, now) {
           </div>
           <div style="flex:1">
             <div class="platform-name">${c.platform}</div>
-            <div class="coupon-code-label" style="font-family:monospace; color:var(--purple-light); font-weight:700; font-size:14px; margin-top:2px">${c.code}</div>
+            <div class="coupon-code-wrapper" style="display:flex; align-items:center; gap:6px; margin-top:4px">
+              <span style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:600">Code:</span>
+              <div class="coupon-code-label" onclick="copyToClipboard('${c.code}')" style="font-family:monospace; color:var(--purple-light); font-weight:700; font-size:14px; background:rgba(124,58,237,0.1); padding:2px 8px; border-radius:4px; cursor:pointer" title="Click to copy">
+                ${c.code}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px; opacity:0.6"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </div>
+            </div>
           </div>
           <div style="text-align:right">
             <div class="platform-amount" style="font-size:16px">${c.value}</div>
             <div class="status-badge ${statusClass}">${statusLabel}</div>
           </div>
         </div>
-        <div class="platform-balance" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px">
+        <div class="platform-balance" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:space-between; align-items:center">
           <div style="font-size:12px; color:var(--text-muted)">Expires: ${c.expiryDate}</div>
-          <div class="platform-status-dot" style="background:${isExpired ? 'var(--red)' : (isUsed ? '#9ca3af' : 'var(--green)')}"></div>
+          ${!isExpired && !isUsed && !isInTrade ? 
+            `<button class="btn btn-ghost btn-sm" onclick="openMarketPostModal('${c.id}')" style="font-size:10px; padding:4px 8px; color:var(--purple-light); border-color:rgba(124,58,237,0.3)">Post to Market</button>` : 
+            `<div class="platform-status-dot" style="background:${isExpired ? 'var(--red)' : (isUsed ? '#9ca3af' : 'var(--green)')}"></div>`
+          }
         </div>
       </div>
     `;
@@ -560,9 +560,6 @@ function initMarketplace(activeTab = 'exchange') {
     tabs.forEach(tab => {
         const isCurrent = tab.dataset.tab === activeTab;
         tab.classList.toggle('active', isCurrent);
-        tab.style.background = isCurrent ? 'var(--purple-main)' : 'none';
-        tab.style.color = isCurrent ? 'white' : 'var(--text-muted)';
-        tab.style.fontWeight = isCurrent ? '600' : '500';
         tab.onclick = () => initMarketplace(tab.dataset.tab);
     });
 
@@ -573,11 +570,13 @@ function initMarketplace(activeTab = 'exchange') {
 
     // 3. Populate Active Count Stat
     const activeDealsEl = document.getElementById('activeDealsCount');
-    if (activeDealsEl) activeDealsEl.innerText = (REWARDS_DATA.filter(r => r.status === 'active').length + 12).toString();
+    if (activeDealsEl) {
+        // We'll update this count based on the snapshot size later if needed
+    }
 
     // 4. Tab Specific Logic
     if (activeTab === 'exchange') {
-        renderExchangeTab();
+        renderP2PMarketplace();
     } else if (activeTab === 'trending') {
         renderTrendingTab();
     } else if (activeTab === 'history') {
@@ -585,76 +584,288 @@ function initMarketplace(activeTab = 'exchange') {
     }
 }
 
-let selectedExchangeRewardId = null;
+let marketplaceListener = null;
 
-function renderExchangeTab() {
-    const rewardsContainer = document.getElementById('exchangeableRewards');
-    const offersContainer = document.getElementById('exchangeOffers');
-    if (!rewardsContainer || !offersContainer) return;
+async function renderP2PMarketplace() {
+    const container = document.getElementById('p2pMarketplaceContainer');
+    if (!container) return;
 
-    // Filter user's rewards for exchange (Min value ₹50)
-    const exchangeable = REWARDS_DATA.filter(r => r.value >= 50 && r.status === 'active');
+    if (marketplaceListener) marketplaceListener();
 
-    if (exchangeable.length === 0) {
-        rewardsContainer.innerHTML = `
-            <div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted)">
-                <p>No rewards available for exchange (Min. ₹50 required)</p>
-            </div>`;
-    } else {
-        rewardsContainer.innerHTML = exchangeable.map(r => `
-            <div class="exchange-reward-card" 
-                 onclick="selectRewardForExchange(${r.id})" 
-                 style="background:rgba(255,255,255,0.03); border:1px solid ${selectedExchangeRewardId == r.id ? 'var(--purple-main)' : 'var(--border)'}; padding:12px; border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:0.2s; ${selectedExchangeRewardId == r.id ? 'box-shadow: 0 0 15px rgba(124,58,237,0.2)' : ''}">
-                 <div style="width:40px; height:40px; background:rgba(255,255,255,0.05); border-radius:8px; display:flex; align-items:center; justify-content:center">
-                    ${getLogoHtml(r)}
-                 </div>
-                 <div style="flex:1">
-                    <p style="margin:0; font-size:13px; font-weight:600">${r.platform}</p>
-                    <p style="margin:0; font-size:11px; color:var(--text-muted)">₹${r.value}</p>
-                 </div>
-                 ${selectedExchangeRewardId == r.id ? '<div style="color:var(--purple-light)">⭐</div>' : ''}
-            </div>
-        `).join('');
-    }
+    marketplaceListener = db.collection('marketplace')
+        .where('status', '==', 'available')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot((snapshot) => {
+            if (snapshot.empty) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align:center; padding:60px; color:var(--text-muted)">
+                        <div style="font-size:48px; margin-bottom:15px">🏜️</div>
+                        <p style="font-weight:600; color:white">Marketplace is empty</p>
+                        <p style="font-size:13px; margin-top:8px">Be the first to post a reward from your wallet!</p>
+                    </div>`;
+                return;
+            }
 
-    // Render Exchange Offers / Rates
-    const offers = [
-        { from: 'Amazon Pay', to: 'Swiggy', rate: 1.1, volume: 'High', color: '#FF9900' },
-        { from: 'Paytm', to: 'Amazon Pay', rate: 1.05, volume: 'Hot', color: '#00BAF2' },
-        { from: 'PhonePe', to: 'Zomato', rate: 0.95, volume: 'Stable', color: '#5F259F' },
-        { from: 'Cred', to: 'Amazon Pay', rate: 1.08, volume: 'Trending', color: '#00D09C' }
-    ];
+            container.innerHTML = snapshot.docs.map(doc => {
+                const item = doc.data();
+                const lid = doc.id;
+                const isMine = window.currentUser && item.ownerUid === window.currentUser.uid;
+                
+                return `
+                    <div class="content-card" style="padding:0; overflow:hidden; border:1px solid ${isMine ? 'var(--purple-main)' : 'var(--border)'}; transition: transform 0.3s">
+                        ${isMine ? '<div style="background:var(--grad-purple); color:white; font-size:10px; font-weight:800; text-align:center; padding:4px 0; letter-spacing:0.1em">YOUR LISTING</div>' : ''}
+                        <div style="padding:20px">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px">
+                                <div style="display:flex; gap:12px; align-items:center">
+                                    <div style="width:44px; height:44px; background:rgba(255,255,255,0.03); border-radius:10px; display:flex; align-items:center; justify-content:center">
+                                        ${getLogoHtml(item)}
+                                    </div>
+                                    <div>
+                                        <h4 style="margin:0; font-size:15px">${item.platform}</h4>
+                                        <div style="font-size:11px; color:var(--text-muted)">Posted by ${item.ownerName.split(' ')[0]}</div>
+                                    </div>
+                                </div>
+                                <div style="text-align:right">
+                                    <div style="font-size:18px; font-weight:800; color:var(--green)">${item.value}</div>
+                                    <div style="font-size:10px; color:var(--text-muted)">Value</div>
+                                </div>
+                            </div>
+                            
+                            <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:10px; margin-bottom:15px; border:1px dashed var(--border)">
+                                <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">Asking:</div>
+                                <div style="font-size:13px; font-weight:500; color:var(--purple-light)">${item.askingMsg || 'Open for offers'}</div>
+                            </div>
 
-    offersContainer.innerHTML = offers.map(o => `
-        <div class="offer-row" style="background:var(--bg-card); border:1px solid var(--border); border-radius:15px; padding:15px; display:flex; align-items:center; justify-content:space-between">
-            <div style="display:flex; align-items:center; gap:20px; flex:1">
-                <div style="text-align:center">
-                    <p style="font-size:10px; color:var(--text-muted); margin-bottom:4px">FROM</p>
-                    <div style="background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:8px; color:white; font-size:13px; font-weight:600">${o.from}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:20px">
+                                <span style="color:var(--text-muted)">Expires ${item.expiryDate}</span>
+                                <span class="badge" style="background:rgba(16,185,129,0.1); color:var(--green)">Verified</span>
+                            </div>
+
+                            <button class="btn ${isMine ? 'btn-ghost' : 'btn-primary'} btn-full" 
+                                    onclick="${isMine ? `removeListing('${lid}')` : `openClaimModal('${lid}')`}" 
+                                    style="font-size:13px">
+                                ${isMine ? 'Remove Listing' : '🤝 Exchange Now'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        });
+}
+
+// --- P2P Posting Logic ---
+let selectedRewardToPost = null;
+
+function openMarketPostModal(rewardId) {
+    selectedRewardToPost = REWARDS_DATA.find(r => r.id === rewardId);
+    if (!selectedRewardToPost) return;
+
+    const modal = document.getElementById('marketPostModal');
+    const preview = document.getElementById('marketPostPreview');
+    if (!modal || !preview) return;
+
+    preview.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <div style="display:flex; gap:12px; align-items:center">
+                <div style="font-size:24px">${selectedRewardToPost.emoji || '🎁'}</div>
+                <div>
+                    <div style="font-weight:700; font-size:14px">${selectedRewardToPost.platform}</div>
+                    <div style="font-size:11px; color:var(--text-muted)">Value: ${selectedRewardToPost.value}</div>
                 </div>
-                <div style="color:var(--purple-light)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 8 4 4-4 4M2 12h20M6 8l-4 4 4 4"/></svg>
-                </div>
-                <div style="text-align:center">
-                    <p style="font-size:10px; color:var(--text-muted); margin-bottom:4px">TO</p>
-                    <div style="background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:8px; color:white; font-size:13px; font-weight:600">${o.to}</div>
-                </div>
             </div>
-            
-            <div style="text-align:center; padding: 0 30px">
-                <p style="font-size:10px; color:var(--text-muted); margin-bottom:4px">RATE</p>
-                <p style="color:var(--green); font-weight:700; font-size:16px; margin:0">1:${o.rate}</p>
-            </div>
-
-            <div style="display:flex; align-items:center; gap:15px">
-                <span class="badge" style="background:rgba(255,255,255,0.03); color:var(--text-muted); font-size:10px">${o.volume}</span>
-                <button class="btn btn-primary btn-sm" onclick="initiateExchange('${o.from}', '${o.to}', ${o.rate})" 
-                        ${selectedExchangeRewardId ? '' : 'disabled style="opacity:0.5; cursor:not-allowed"'}>
-                    Exchange
-                </button>
-            </div>
+            <div style="font-family:monospace; color:var(--purple-light); font-weight:700; font-size:12px">${selectedRewardToPost.code}</div>
         </div>
-    `).join('');
+    `;
+
+    document.getElementById('marketAskingMsg').value = '';
+    modal.classList.add('open');
+
+    // Wire up events
+    document.getElementById('closeMarketPostModal').onclick = () => modal.classList.remove('open');
+    document.getElementById('cancelMarketPost').onclick = () => modal.classList.remove('open');
+    document.getElementById('confirmMarketPost').onclick = executePostToMarket;
+}
+window.openMarketPostModal = openMarketPostModal;
+
+async function executePostToMarket() {
+    if (!selectedRewardToPost || !window.currentUser) return;
+    
+    const btn = document.getElementById('confirmMarketPost');
+    const asking = document.getElementById('marketAskingMsg').value.trim();
+    
+    btn.disabled = true;
+    btn.textContent = 'Posting...';
+
+    const listing = {
+        platform: selectedRewardToPost.platform,
+        code: selectedRewardToPost.code,
+        value: selectedRewardToPost.value,
+        category: selectedRewardToPost.category,
+        expiryDate: selectedRewardToPost.expiryDate,
+        emoji: selectedRewardToPost.emoji || '🎁',
+        ownerUid: window.currentUser.uid,
+        ownerName: window.currentUser.name || 'User',
+        askingMsg: asking,
+        status: 'available',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        // 1. Add to global marketplace
+        await db.collection('marketplace').add(listing);
+        
+        // 2. Mark local reward as "in_trade"
+        await db.collection('users').doc(window.currentUser.uid).collection('rewards').doc(selectedRewardToPost.id).update({
+            status: 'in_trade'
+        });
+
+        showToast('Coupon listed in marketplace!', 'success');
+        document.getElementById('marketPostModal').classList.remove('open');
+        loadUserRewards(window.currentUser.uid);
+    } catch (e) {
+        console.error("Post error:", e);
+        showToast("Error listing coupon: " + e.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Confirm & Post';
+    }
+}
+
+async function removeListing(lid) {
+    if (!confirm('Remove this listing? The coupon will return to your wallet.')) return;
+    
+    try {
+        const doc = await db.collection('marketplace').doc(lid).get();
+        if (!doc.exists) return;
+        const data = doc.data();
+        
+        // Find the reward in user's wallet to mark as active again
+        const rewardsSnap = await db.collection('users').doc(window.currentUser.uid).collection('rewards')
+            .where('code', '==', data.code).get();
+            
+        if (!rewardsSnap.empty) {
+            await rewardsSnap.docs[0].ref.update({ status: 'active' });
+        }
+
+        await db.collection('marketplace').doc(lid).delete();
+        showToast('Listing removed', 'info');
+        loadUserRewards(window.currentUser.uid);
+    } catch (e) {
+        console.error("Remove error:", e);
+    }
+}
+window.removeListing = removeListing;
+
+// --- Exchange Logic ---
+let targetListingDoc = null;
+let selectedRewardToOfferId = null;
+
+async function openClaimModal(lid) {
+    try {
+        const doc = await db.collection('marketplace').doc(lid).get();
+        if (!doc.exists) return;
+        targetListingDoc = doc;
+        const target = doc.data();
+
+        const modal = document.getElementById('claimExchangeModal');
+        const targetPreview = document.getElementById('claimTargetPreview');
+        const list = document.getElementById('myExchangeableRewards');
+        
+        targetPreview.innerHTML = `
+            <div style="text-align:center">
+                <div style="font-size:24px; margin-bottom:4px">${target.emoji}</div>
+                <div style="font-weight:700; font-size:13px">${target.platform}</div>
+                <div style="font-size:11px; color:var(--green)">${target.value}</div>
+            </div>
+        `;
+
+        // Render my rewards to offer
+        const myRewards = REWARDS_DATA.filter(r => r.status === 'active');
+        if (myRewards.length === 0) {
+            list.innerHTML = '<p style="font-size:12px; text-align:center; padding:10px">No active rewards to offer. Try scanning a new one!</p>';
+        } else {
+            list.innerHTML = myRewards.map(r => `
+                <div class="exchange-reward-card" onclick="selectOfferReward('${r.id}')" id="offer-${r.id}"
+                     style="background:rgba(255,255,255,0.03); border:1px solid var(--border); padding:10px; border-radius:10px; cursor:pointer; display:flex; gap:10px; align-items:center">
+                    <div style="font-size:18px">${r.emoji}</div>
+                    <div style="flex:1">
+                        <div style="font-size:12px; font-weight:600">${r.platform}</div>
+                        <div style="font-size:10px; color:var(--text-muted)">Value: ${r.value}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        modal.classList.add('open');
+        document.getElementById('confirmClaimBtn').disabled = true;
+
+        // Wire close
+        document.getElementById('closeClaimModal').onclick = () => modal.classList.remove('open');
+        document.getElementById('cancelClaim').onclick = () => modal.classList.remove('open');
+        document.getElementById('confirmClaimBtn').onclick = executeExchange;
+
+    } catch (e) { console.error(e); }
+}
+window.openClaimModal = openClaimModal;
+
+function selectOfferReward(rid) {
+    selectedRewardToOfferId = rid;
+    document.querySelectorAll('.exchange-reward-card').forEach(el => {
+        el.style.borderColor = 'var(--border)';
+        el.style.background = 'rgba(255,255,255,0.03)';
+    });
+    const selected = document.getElementById(`offer-${rid}`);
+    selected.style.borderColor = 'var(--purple-main)';
+    selected.style.background = 'rgba(124,58,237,0.05)';
+    
+    // Preview in center
+    const offer = REWARDS_DATA.find(r => r.id === rid);
+    document.getElementById('claimOfferPreview').innerHTML = `
+        <div style="text-align:center">
+            <div style="font-size:24px; margin-bottom:4px">${offer.emoji}</div>
+            <div style="font-weight:700; font-size:13px">${offer.platform}</div>
+            <div style="font-size:11px; color:var(--purple-light)">${offer.value}</div>
+        </div>
+    `;
+    document.getElementById('confirmClaimBtn').disabled = false;
+}
+window.selectOfferReward = selectOfferReward;
+
+async function executeExchange() {
+    if (!targetListingDoc || !selectedRewardToOfferId) return;
+    const btn = document.getElementById('confirmClaimBtn');
+    btn.disabled = true;
+    btn.textContent = 'Negotiating...';
+
+    try {
+        const target = targetListingDoc.data();
+        const offer = REWARDS_DATA.find(r => r.id === selectedRewardToOfferId);
+        
+        // 1. Give my reward to them (or just consume it for now in this demo logic)
+        // In a real P2P, we'd add to Their collection. Here we simulate the logic.
+        
+        // 2. Add Their reward to My collection
+        await addRewardToLocal(parseInt(target.value.replace(/[^\d]/g, '')), target.platform, target.code, target.category, target.expiryDate);
+        
+        // 3. Mark my offer reward as Used
+        await db.collection('users').doc(window.currentUser.uid).collection('rewards').doc(offer.id).update({
+            status: 'used'
+        });
+
+        // 4. Mark marketplace item as Exchanged
+        await db.collection('marketplace').doc(targetListingDoc.id).delete();
+
+        showToast('Exchange Successful! Check your wallet.', 'success');
+        document.getElementById('claimExchangeModal').classList.remove('open');
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        loadUserRewards(window.currentUser.uid);
+    } catch (e) {
+        console.error("Exchange fail:", e);
+        showToast("Exchange failed: " + e.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Confirm Swap';
+    }
 }
 
 function selectRewardForExchange(id) {
@@ -913,60 +1124,124 @@ function initSettings() {
 }
 
 let adminListener = null;
+let approvedListener = null;
+let statsListener = null;
 
 async function initAdmin() {
-  const container = document.getElementById('pendingUsersTable');
-  const noMsg = document.getElementById('noPendingMsg');
-  if (!container) return;
+  const pendingContainer = document.getElementById('pendingUsersTable');
+  const approvedContainer = document.getElementById('approvedUsersTable');
+  if (!pendingContainer || !approvedContainer) return;
   
   if (adminListener) adminListener();
+  if (approvedListener) approvedListener();
+  if (statsListener) statsListener();
   
-  console.log("Admin: Initializing...");
-  container.innerHTML = `
-    <tr>
-        <td colspan="3" style="text-align:center; padding:30px">
-            <div class="btn-spinner" style="display:inline-block; margin-bottom:10px"><div class="spinner-ring"></div></div>
-            <div id="adminStatusMsg">Connecting to Cloud...</div>
-            <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
-                <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="forceAdminRefresh()">Manual Refresh</button>
-                <button class="btn btn-ghost btn-sm" style="font-size:11px; border-color:var(--purple)" onclick="debugPermissions()">🔍 Debug Permissions</button>
-                <button class="btn btn-ghost btn-sm" style="font-size:11px; color:var(--red)" onclick="showAllUsers()">🛑 Show All Users (Fallback)</button>
-            </div>
-        </td>
-    </tr>`;
+  console.log("Admin: Initializing panels...");
+  
+  // Update Current Admin Info
+  if (window.currentUser) {
+    const adminNameEl = document.getElementById('currentAdminName');
+    if (adminNameEl) adminNameEl.textContent = window.currentUser.full_name || window.currentUser.name || 'Admin User';
+  }
 
-  // 1. Set a timeout fallback
-  const timeout = setTimeout(() => {
-      const msg = document.getElementById('adminStatusMsg');
-      if (msg && msg.textContent === 'Connecting to Cloud...') {
-          msg.innerHTML = '<span style="color:var(--yellow)">⚠️ Connection slow. Trying manual fetch...</span>';
-          forceAdminRefresh();
-      }
-  }, 5000);
-
-  // 2. Start Real-time listener
+  // 1. Pending Users Listener
   adminListener = db.collection('users')
     .where('pending', '==', true)
     .onSnapshot((snapshot) => {
-        clearTimeout(timeout);
-        console.log("Admin Snapshot received. Count:", snapshot.size);
         renderAdminList(snapshot.docs);
     }, (err) => {
-        clearTimeout(timeout);
-        console.error("Admin Listener Error:", err);
-        container.innerHTML = `
-            <tr>
-                <td colspan="3" style="padding:30px; text-align:center; color:var(--red)">
-                    <div style="font-size:24px; margin-bottom:10px">❌</div>
-                    <div style="font-weight:600">Access Denied</div>
-                    <div style="font-size:12px; opacity:0.8; margin-bottom:15px">${err.message}</div>
-                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; font-family:monospace; font-size:11px; text-align:left">
-                        Tip: Make sure you clicked "Publish" on your Firestore Rules tab in the Firebase Console!
-                    </div>
-                </td>
-            </tr>`;
+        console.error("Admin Pending Listener Error:", err);
+        pendingContainer.innerHTML = `<tr><td colspan="3" style="color:var(--red); text-align:center; padding:20px">${err.message}</td></tr>`;
+    });
+
+  // 2. Approved Users Listener
+  approvedListener = db.collection('users')
+    .where('isApproved', '==', true)
+    .onSnapshot((snapshot) => {
+        renderApprovedUsersList(snapshot.docs);
+    }, (err) => {
+        console.error("Admin Approved Listener Error:", err);
+        approvedContainer.innerHTML = `<tr><td colspan="4" style="color:var(--red); text-align:center; padding:20px">${err.message}</td></tr>`;
+    });
+
+  // 3. Stats Listener (All Users)
+  statsListener = db.collection('users')
+    .onSnapshot((snapshot) => {
+        updateAdminStats(snapshot.docs);
     });
 }
+
+function updateAdminStats(docs) {
+    const total = docs.length;
+    let admins = 0;
+    let basic = 0;
+    
+    docs.forEach(doc => {
+        const u = doc.data();
+        if (u.role === 'admin' || u.isAdmin === true) admins++;
+        else if (u.isApproved) basic++;
+    });
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('statTotalUsers', total);
+    set('statAdminCount', admins);
+    set('statBasicCount', basic);
+}
+
+function renderApprovedUsersList(docs) {
+    const container = document.getElementById('approvedUsersTable');
+    const noMsg = document.getElementById('noApprovedMsg');
+    
+    if (docs.length === 0) {
+        container.innerHTML = '';
+        noMsg.style.display = 'block';
+    } else {
+        noMsg.style.display = 'none';
+        container.innerHTML = docs.map(doc => {
+            const u = doc.data();
+            const uid = doc.id;
+            const joinedDate = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString() : '—';
+            const role = (u.role === 'admin' || u.isAdmin === true) ? 'ADMIN' : 'USER';
+            
+            return `
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px">
+                            <div style="width:28px; height:28px; background:rgba(255,255,255,0.05); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700">
+                                ${u.name ? u.name.substring(0,2).toUpperCase() : 'U'}
+                            </div>
+                            <div>
+                                <div style="font-weight:600; font-size:13px">${u.name || 'No Name'}</div>
+                                <div class="${role === 'ADMIN' ? 'role-badge-admin' : 'role-badge-user'}">${role}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:12px; opacity:0.8">${u.email}</td>
+                    <td style="font-size:12px; opacity:0.6">${joinedDate}</td>
+                    <td>
+                        <button class="btn btn-ghost btn-sm" onclick="revokeAccess('${uid}')" style="color:var(--red); border-color:rgba(239,68,68,0.2); font-size:10px">Revoke</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+}
+
+async function revokeAccess(uid) {
+    if (!confirm('Are you sure you want to revoke access for this user? They will be moved back to the pending state.')) return;
+    
+    try {
+        await db.collection('users').doc(uid).update({
+            isApproved: false,
+            pending: true
+        });
+        showToast('Access revoked. User moved to pending.', 'info');
+    } catch (err) {
+        console.error("Revoke error:", err);
+        showToast("Error: " + err.message, "error");
+    }
+}
+window.revokeAccess = revokeAccess;
 
 async function forceAdminRefresh() {
     const container = document.getElementById('pendingUsersTable');
@@ -1125,38 +1400,344 @@ if (uploadInput) uploadInput.onchange = async (e) => {
 };
 
 const scanSmsBtn = document.getElementById('scanSmsBtn');
-if (scanSmsBtn) scanSmsBtn.onclick = () => {
-    showToast('Scanning SMS for reward codes...', 'info');
-    setTimeout(() => {
-        const amount = 250;
-        addRewardToLocal(amount, "Swiggy (SMS)");
-        showToast(`Found new ₹${amount} Swiggy coupon from SMS!`, 'success');
-        confetti({ particleCount: 100, spread: 60, origin: { y: 0.7 } });
-    }, 2000);
+if (scanSmsBtn) scanSmsBtn.onclick = () => openSmsScanModal();
+
+// ============================================
+// SMS SCANNER — Full Implementation
+// ============================================
+
+const SMS_EXAMPLES = {
+    swiggy:  "Dear Customer, Your Swiggy order is confirmed! As a thank you, enjoy ₹150 cashback on your next order. Use code SWIG150 at checkout. Valid till 31 Dec 2025. Happy eating!",
+    amazon:  "Congratulations! You've earned ₹200 Amazon Pay cashback on your recent purchase. Code: AMZN200CB. Redeem before 15 Jan 2026. T&C apply. Amazon Pay Team.",
+    paytm:   "Great news! ₹75 Paytm cashback added to your wallet for completing your first UPI transaction of the month. Offer valid till 25 Dec 2025. Use code PAYTM75. Paytm Team.",
+    cred:    "Hi! You've unlocked ₹500 CRED coins on your HDFC credit card payment. Redeem via the CRED app using code CRED500. Expiry: 10 Jan 2026. Keep paying on time!",
+    zomato:  "Yay! You've earned a ₹100 Zomato discount coupon for being a Gold member. Apply code ZOM100 on your next food order. Valid for 7 days. Bon appétit!"
 };
+
+const SMS_PLATFORM_MAP = [
+    { names: ['swiggy'], label: 'Swiggy',    category: 'Food',          emoji: '🍔' },
+    { names: ['zomato'], label: 'Zomato',    category: 'Food',          emoji: '🍕' },
+    { names: ['amazon', 'amzn'],  label: 'Amazon',    category: 'Shopping',      emoji: '🛒' },
+    { names: ['flipkart'],        label: 'Flipkart',  category: 'Shopping',      emoji: '🔶' },
+    { names: ['myntra'],          label: 'Myntra',    category: 'Shopping',      emoji: '👗' },
+    { names: ['ajio'],            label: 'Ajio',      category: 'Shopping',      emoji: '🛍️' },
+    { names: ['paytm'],           label: 'Paytm',     category: 'Payments',      emoji: '💙' },
+    { names: ['phonepe','phone pe'], label:'PhonePe', category: 'Payments',      emoji: '📱' },
+    { names: ['gpay','google pay'], label:'Google Pay',category:'Payments',      emoji: '💚' },
+    { names: ['cred'],            label: 'CRED',      category: 'Payments',      emoji: '💳' },
+    { names: ['uber'],            label: 'Uber',      category: 'Travel',        emoji: '🚗' },
+    { names: ['ola'],             label: 'Ola',       category: 'Travel',        emoji: '🟢' },
+    { names: ['rapido'],          label: 'Rapido',    category: 'Travel',        emoji: '🛵' },
+    { names: ['makemytrip','mmt'], label:'MakeMyTrip',category:'Travel',         emoji: '✈️' },
+    { names: ['bookmyshow','bms'], label:'BookMyShow',category:'Entertainment',  emoji: '🎬' },
+    { names: ['netflix'],         label: 'Netflix',   category: 'Entertainment', emoji: '🎥' },
+    { names: ['bigbasket','big basket'], label:'BigBasket', category:'Food',     emoji: '🥬' },
+    { names: ['blinkit','grofers'], label:'Blinkit',  category: 'Food',          emoji: '💛' },
+];
+
+function openSmsScanModal() {
+    const modal = document.getElementById('smsScanModal');
+    if (!modal) return;
+    // Reset to step 1
+    showSmsStep('step1');
+    document.getElementById('smsTextInput').value = '';
+    modal.classList.add('open');
+
+    // Wire up close
+    document.getElementById('closeSmsModal').onclick = () => modal.classList.remove('open');
+    modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };
+
+    // Wire up parse button
+    document.getElementById('parseSmsBtn').onclick = () => {
+        const text = document.getElementById('smsTextInput').value.trim();
+        if (!text) { showToast('Please paste an SMS message first.', 'error'); return; }
+        runSmsDetection(text);
+    };
+
+    // Wire up "Try Again" buttons
+    ['smsScanAgainBtn','smsRetryBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.onclick = () => showSmsStep('step1');
+    });
+
+    // "Add Manually" button opens blank step 2
+    const manualBtn = document.getElementById('smsManualBtn');
+    if (manualBtn) manualBtn.onclick = () => {
+        showSmsStep('step2');
+        populateSmsFields({ platform:'', code:'', amount:0, value:'', category:'Other', expiry: defaultExpiry() });
+        document.getElementById('smsDetectResult').innerHTML = '';
+    };
+
+    // Wire up confirm
+    document.getElementById('confirmSmsBtn').onclick = saveSmsReward;
+}
+
+function showSmsStep(step) {
+    ['smsStep1','smsStep2','smsStepNone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    const map = { step1:'smsStep1', step2:'smsStep2', none:'smsStepNone' };
+    const el = document.getElementById(map[step]);
+    if (el) el.style.display = 'block';
+}
+
+function loadSmsExample(platform) {
+    const textarea = document.getElementById('smsTextInput');
+    if (textarea && SMS_EXAMPLES[platform]) {
+        textarea.value = SMS_EXAMPLES[platform];
+        textarea.focus();
+    }
+}
+window.loadSmsExample = loadSmsExample;
+
+function parseSmsText(text) {
+    const lower = text.toLowerCase();
+    const result = { platform: '', category: 'Other', emoji: '🎁', code: '', amount: 0, value: '', expiry: defaultExpiry() };
+
+    // 1. Detect Platform
+    for (const p of SMS_PLATFORM_MAP) {
+        if (p.names.some(n => lower.includes(n))) {
+            result.platform = p.label;
+            result.category = p.category;
+            result.emoji    = p.emoji;
+            break;
+        }
+    }
+
+    // 2. Extract Amount — ₹ / Rs / cashback / discount / off / reward
+    const amountPatterns = [
+        /(?:₹|rs\.?|inr)\s*(\d[\d,]*(?:\.\d{1,2})?)/i,
+        /(\d[\d,]+)\s*(?:rupees?|rs\.?|inr)\b/i,
+        /(\d[\d,]+)\s*(?:cashback|off|discount|reward|coins?|points?)/i,
+    ];
+    for (const pat of amountPatterns) {
+        const m = text.match(pat);
+        if (m) {
+            result.amount = parseInt(m[1].replace(/,/g, ''));
+            result.value  = `₹${result.amount}`;
+            break;
+        }
+    }
+
+    // 3. Extract Coupon Code — look for CODE: XXXXX or USE XXXXX
+    const codePatterns = [
+        /(?:code|coupon|promo|use)\s*:?\s*([A-Z0-9]{4,16})/i,
+        /\b([A-Z]{2,6}[0-9]{2,6})\b/,    // e.g. SWIG150, AMZN200CB
+        /\b([A-Z]{4,12})\b/               // all caps word ≥4 chars as fallback
+    ];
+    for (const pat of codePatterns) {
+        const m = text.match(pat);
+        if (m && !/^(DEAR|GREAT|YOUR|NEXT|ENJOY|HAPPY|VALID|TILL|FROM|WITH|UPON|CARD|THIS|THAT|HAVE|BEEN|BEEN)$/i.test(m[1])) {
+            result.code = m[1].toUpperCase();
+            break;
+        }
+    }
+
+    // 4. Extract Expiry Date
+    const monthMap = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+    const datePatterns = [
+        /(\d{1,2})\s+([A-Za-z]{3,9})\s+(20\d{2})/,   // 31 Dec 2025
+        /([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(20\d{2})/,  // Dec 31, 2025
+        /(\d{1,2})\/(\d{1,2})\/(20\d{2})/,             // 31/12/2025
+        /(\d{4})-(\d{2})-(\d{2})/,                      // 2025-12-31
+    ];
+    for (const pat of datePatterns) {
+        const m = text.match(pat);
+        if (m) {
+            try {
+                let day, month, year;
+                if (pat === datePatterns[0]) {
+                    day = parseInt(m[1]); month = monthMap[m[2].toLowerCase().slice(0,3)]; year = parseInt(m[3]);
+                } else if (pat === datePatterns[1]) {
+                    month = monthMap[m[1].toLowerCase().slice(0,3)]; day = parseInt(m[2]); year = parseInt(m[3]);
+                } else if (pat === datePatterns[2]) {
+                    day = parseInt(m[1]); month = parseInt(m[2]); year = parseInt(m[3]);
+                } else {
+                    year = parseInt(m[1]); month = parseInt(m[2]); day = parseInt(m[3]);
+                }
+                if (month && day && year) {
+                    result.expiry = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                }
+            } catch(e) {}
+            break;
+        }
+    }
+
+    return result;
+}
+
+function defaultExpiry() {
+    return new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0];
+}
+
+function runSmsDetection(text) {
+    const btn = document.getElementById('parseSmsBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = `<span style="display:inline-block; animation:spin 0.8s linear infinite; margin-right:8px">↻</span> Detecting...`; }
+
+    setTimeout(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Detect Reward`; }
+
+        const data = parseSmsText(text);
+
+        if (!data.amount || data.amount <= 0) {
+            showSmsStep('none');
+            return;
+        }
+
+        populateSmsFields(data);
+
+        // Show detection banner
+        const resultEl = document.getElementById('smsDetectResult');
+        if (resultEl) {
+            const confidence = [data.platform, data.code, data.amount > 0, data.expiry !== defaultExpiry()].filter(Boolean).length;
+            const confLabel  = confidence >= 3 ? ['High Confidence','var(--green)'] : confidence >= 2 ? ['Good Match','var(--yellow)'] : ['Low Confidence','var(--red)'];
+            resultEl.innerHTML = `
+              <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.2); border-radius:var(--radius-lg)">
+                <div style="font-size:32px">${data.emoji || '🎁'}</div>
+                <div style="flex:1">
+                  <p style="font-weight:700; font-size:15px; margin:0">${data.platform || 'Unknown Platform'} Reward Detected</p>
+                  <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0">Value: <strong style="color:var(--green)">${data.value || '—'}</strong> · Code: <strong style="color:white">${data.code || '—'}</strong></p>
+                </div>
+                <span style="background:rgba(16,185,129,0.15); color:${confLabel[1]}; font-size:10px; font-weight:700; padding:4px 10px; border-radius:var(--radius-full); border:1px solid currentColor; opacity:0.8">${confLabel[0]}</span>
+              </div>`;
+        }
+
+        showSmsStep('step2');
+    }, 900);
+}
+
+function populateSmsFields(data) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    set('smsPlatform', data.platform || '');
+    set('smsCode',     data.code     || '');
+    set('smsValue',    data.value    || (data.amount ? `₹${data.amount}` : ''));
+    set('smsExpiry',   data.expiry   || defaultExpiry());
+    const catEl = document.getElementById('smsCategory');
+    if (catEl && data.category) catEl.value = data.category;
+}
+
+async function saveSmsReward() {
+    const btn = document.getElementById('confirmSmsBtn');
+    const platform = document.getElementById('smsPlatform')?.value?.trim();
+    const code     = document.getElementById('smsCode')?.value?.trim() || 'SMS-REWARD';
+    const valueStr = document.getElementById('smsValue')?.value?.trim();
+    const category = document.getElementById('smsCategory')?.value;
+    const expiry   = document.getElementById('smsExpiry')?.value;
+
+    if (!platform) { showToast('Please enter a platform name.', 'error'); return; }
+    const amount = parseInt((valueStr || '').replace(/[^\d]/g, '')) || 0;
+    if (amount <= 0) { showToast('Please enter a valid reward value.', 'error'); return; }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    await addRewardToLocal(amount, platform, code, category, expiry);
+
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Add to Wallet'; }
+    document.getElementById('smsScanModal').classList.remove('open');
+    confetti({ particleCount: 120, spread: 65, origin: { y: 0.65 } });
+}
 
 async function handleOcr(file) {
     showToast('AI Scanning Screenshot...', 'info');
     try {
         const { data: { text } } = await Tesseract.recognize(file, 'eng');
         console.log("OCR Result:", text);
-        
-        // Regex to find currency amounts
-        const amountMatch = text.match(/(?:₹|Rs\.?|INR)\s*(\d+(?:\.\d{2})?)/i) || 
-                          text.match(/Balance\s*:?\s*(\d+(?:\.\d{2})?)/i) ||
-                          text.match(/(\d+)\s*(?:off|discount|reward)/i);
-        
-        let amount = 0;
-        console.log("OCR Raw Text:", text);
-        
         const extracted = parseCouponData(text);
         openOcrModal(extracted);
     } catch (err) {
         console.error("OCR Error:", err);
+        showToast("Scanning failed. Please try again or enter manually.", "error");
     }
 }
 
-async function addRewardToLocal(amount, platform) {
+function parseCouponData(text) {
+    const lines = text.split('\n');
+    let data = {
+        platform: 'Other',
+        code: 'UNKNOWN',
+        value: '₹0',
+        amount: 0,
+        category: 'Other',
+        expiry: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0] // Default +30 days
+    };
+
+    // 1. Detect Platform
+    const platforms = ['Amazon', 'Swiggy', 'Zomato', 'Uber', 'Flipkart', 'Paytm', 'PhonePe', 'Cred', 'Myntra', 'Ajio'];
+    for (const p of platforms) {
+        if (text.toLowerCase().includes(p.toLowerCase())) {
+            data.platform = p;
+            break;
+        }
+    }
+
+    // 2. Detect Amount / Value
+    const amountMatch = text.match(/(?:₹|Rs\.?|INR)\s*(\d+(?:\.\d{2})?)/i) || 
+                      text.match(/(\d+)\s*(?:off|discount|reward|balance)/i);
+    if (amountMatch) {
+        data.amount = parseInt(amountMatch[1]);
+        data.value = `₹${data.amount}`;
+    }
+
+    // 3. Detect Coupon Code
+    const codeMatch = text.match(/Code\s*:?\s*([A-Z0-9]{4,12})/i) || 
+                    text.match(/([A-Z0-9]{6,10})/);
+    if (codeMatch) {
+        data.code = codeMatch[1];
+    }
+
+    return data;
+}
+
+function openOcrModal(data) {
+    const modal = document.getElementById('ocrModal');
+    if (!modal) return;
+
+    document.getElementById('ocrPlatform').value = data.platform;
+    document.getElementById('ocrCode').value = data.code;
+    document.getElementById('ocrValue').value = data.value;
+    document.getElementById('ocrCategory').value = data.category;
+    document.getElementById('ocrExpiry').value = data.expiry;
+
+    modal.classList.add('open');
+
+    const closeBtn = document.getElementById('closeOcrModal');
+    if (closeBtn) closeBtn.onclick = () => modal.classList.remove('open');
+
+    const confirmBtn = document.getElementById('confirmOcrBtn');
+    if (confirmBtn) {
+        confirmBtn.onclick = async () => {
+            const finalAmount = parseInt(document.getElementById('ocrValue').value.replace(/[^\d]/g, '')) || 0;
+            const finalPlatform = document.getElementById('ocrPlatform').value;
+            const finalCode = document.getElementById('ocrCode').value;
+            const finalCat = document.getElementById('ocrCategory').value;
+            const finalExpiry = document.getElementById('ocrExpiry').value;
+
+            confirmBtn.disabled = true;
+            confirmBtn.innerText = 'Saving...';
+            
+            await addRewardToLocal(finalAmount, finalPlatform, finalCode, finalCat, finalExpiry);
+            
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = '✅ Confirm & Add to Wallet';
+            modal.classList.remove('open');
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        };
+    }
+}
+
+function initOcrActions() {
+    // This is called by initOverview
+    const uploadInput = document.getElementById('uploadScreenshot');
+    if (uploadInput) {
+        uploadInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) handleOcr(file);
+        };
+    }
+}
+
+async function addRewardToLocal(amount, platform, code = 'PROMO', category = 'Other', expiry = null) {
     if (!window.currentUser) {
         showToast("Please log in to save rewards.", "error");
         return;
@@ -1164,23 +1745,23 @@ async function addRewardToLocal(amount, platform) {
 
     const newRew = {
         platform: platform,
-        emoji: '🎁',
-        type: 'Scanned',
+        code: code,
+        category: category,
         balance: amount,
-        points: null,
-        expiryLabel: 'Valid for 30 days',
-        expiryClass: 'expiry-ok',
-        color: '#10B981',
+        value: `₹${amount}`,
+        status: 'active',
+        expiryDate: expiry || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+        emoji: '🎁',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     try {
         await db.collection('users').doc(window.currentUser.uid).collection('rewards').add(newRew);
-        showToast(`Successfully saved ₹${amount} reward to cloud!`, 'success');
+        showToast(`Successfully saved ₹${amount} reward!`, 'success');
         loadUserRewards(window.currentUser.uid);
     } catch (e) {
         console.error("Cloud save error:", e);
-        showToast("Failed to save to cloud.", "error");
+        showToast("Failed to save reward.", "error");
     }
 }
 
@@ -1190,6 +1771,8 @@ async function addRewardToLocal(amount, platform) {
 document.addEventListener('DOMContentLoaded', () => {
   loadBackendData();
   initSettings();
+
+  // Dashboard Navigation: Active Rewards initialized in setupRewardFilters
 });
 
 // ============================================

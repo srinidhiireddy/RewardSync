@@ -42,8 +42,22 @@
   font-size: 14px;
   font-weight: 500;
   transition: color var(--transition);
+  position: relative;
+  padding-bottom: 2px;
+}
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--grad-purple);
+  border-radius: 2px;
+  transition: width var(--transition);
 }
 .nav-links a:hover { color: white; }
+.nav-links a:hover::after { width: 100%; }
 .nav-mobile-toggle {
   display: none;
   flex-direction: column;
@@ -354,13 +368,13 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at top left, rgba(var(--problem-rgb), 0.08), transparent 70%);
+  background: radial-gradient(ellipse at top left, rgba(124,58,237,0.08), transparent 70%);
   opacity: 0;
   transition: opacity var(--transition);
 }
 .problem-card:hover {
-  border-color: rgba(255,255,255,0.15);
-  transform: translateY(-4px);
+  border-color: rgba(255,255,255,0.16);
+  transform: translateY(-5px);
   box-shadow: var(--shadow-lg);
 }
 .problem-card:hover::before { opacity: 1; }
@@ -635,7 +649,7 @@
   width: max-content;
 }
 .platform-pill {
-  padding: 12px 24px;
+  padding: 11px 22px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
@@ -646,8 +660,10 @@
   cursor: default;
 }
 .platform-pill:hover {
-  border-color: rgba(124,58,237,0.4);
-  background: rgba(124,58,237,0.08);
+  border-color: rgba(124,58,237,0.5);
+  background: rgba(124,58,237,0.1);
+  box-shadow: 0 0 16px rgba(124,58,237,0.2);
+  transform: translateY(-2px);
 }
 @keyframes marquee {
   0% { transform: translateX(0); }
@@ -685,6 +701,7 @@
   font-weight: 800;
   margin-bottom: 16px;
   position: relative;
+  letter-spacing: -0.02em;
 }
 .cta-card p {
   color: var(--text-secondary);
